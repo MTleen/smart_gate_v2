@@ -162,15 +162,15 @@ def parse_args():
     parser.add_argument("--display_width", type=int, default=1920)
     parser.add_argument("--display_height", type=int, default=1080)
     parser.add_argument("--save_path", type=str, default="./output/")
-    parser.add_argument("--cpu",
+    parser.add_argument("--use_cuda",
                         dest="use_cuda",
                         action="store_false",
                         default=True)
     parser.add_argument("--camera",
                         action="store",
                         dest="cam",
-                        type=int,
-                        default="-1")
+                        # type=int,
+                        default=-1)
     return parser.parse_args()
 
 

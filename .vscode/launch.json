@@ -11,7 +11,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "pythonPath": "/Users/hushengxiang/anaconda3/envs/torch/bin/python",
-            "args": ["./videos/test.mp4", "--display"]
+            "args": ["./videos/test2.mp4", "--display"]
         }
     ]
 }
