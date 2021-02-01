@@ -4,6 +4,7 @@ build/
 *.egg-info
 output/
 videos/
+logs/
 
 
 # Files

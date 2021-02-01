@@ -47,7 +47,6 @@ class VideoTracker(object):
         self.detector.classes = list(map(lambda x: int(x), classes))
 
         self.deepsort = build_tracker(cfg, use_cuda=use_cuda)
-        # self.class_names = self.detector.class_names
 
     def __enter__(self):
         if self.args.cam != -1:
@@ -106,16 +105,6 @@ class VideoTracker(object):
                 bbox_xywh = detector_result.xywh[0][:, :4]
                 cls_conf = detector_result.pred[0][:, 4]
                 cls = detector_result.pred[0][:, -1]
-                # select person class
-                # 已经在 detector 中做限制，所以此处已不需要
-                # mask = cls_ids == 0
-
-                # bbox_xywh = bbox_xywh[mask]
-                # bbox dilation just in case bbox too small, delete this line if using a better pedestrian detector
-                # bbox_xywh[:, 3:] *= 1.2
-                # cls_conf = cls_conf[mask]
-
-                # do tracking
                 outputs = self.deepsort.update(bbox_xywh, cls_conf, im)
 
                 # draw boxes for visualization
@@ -149,13 +138,12 @@ class VideoTracker(object):
                 self.logger.info("frame: {}, time: {:.03f}s, fps: {:.03f}, detection numbers: {}, tracking numbers: {}" \
                                 .format(idx_frame, end - start, 1 / (end - start), bbox_xywh.shape[0], len(outputs)))
             else:
+                if self.args.save_path:
+                    self.writer.write(ori_im)
                 end = time.time()
                 if end - start < 0.2:
                     time.sleep(0.2 - (end - start))
                 self.logger.info(f'帧 {idx_frame} 没有对象。')
-                
-                if self.args.save_path:
-                    self.writer.write(ori_im)
 
 
 def parse_args():
