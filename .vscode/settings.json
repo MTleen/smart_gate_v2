@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "/Users/hushengxiang/anaconda3/envs/torch/bin/python"
+    "python.pythonPath": "/home/mathripper/anaconda3/envs/torch/bin/python",
+    "jupyter.jupyterServerType": "local"
 }

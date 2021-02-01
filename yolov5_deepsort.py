@@ -13,6 +13,8 @@ from man_utils.parser import get_config
 from man_utils.log import get_logger
 from man_utils.io import write_results
 
+from matplotlib import pyplot as plt
+
 
 class VideoTracker(object):
     def __init__(self, cfg, args, video_path):
@@ -41,7 +43,8 @@ class VideoTracker(object):
                                        pretrained=True,
                                        force_reload=False)
         self.detector.conf = 0.5
-        self.detector.classes = [0, 2]
+        classes = list(self.cfg.classes.keys())[:-2]
+        self.detector.classes = list(map(lambda x: int(x), classes))
 
         self.deepsort = build_tracker(cfg, use_cuda=use_cuda)
         # self.class_names = self.detector.class_names
@@ -96,9 +99,10 @@ class VideoTracker(object):
             im = cv2.cvtColor(ori_im, cv2.COLOR_BGR2RGB)
 
             # do detection
-            # bbox_xywh, cls_conf, cls_ids = 
+            # bbox_xywh, cls_conf, cls_ids =
             detector_result = self.detector(im)
-            if len(detector_result.pred) > 0 and len(detector_result.pred[0] > 0):
+            if len(detector_result.pred) > 0 and len(
+                    detector_result.pred[0] > 0):
                 bbox_xywh = detector_result.xywh[0][:, :4]
                 cls_conf = detector_result.pred[0][:, 4]
                 cls = detector_result.pred[0][:, -1]
@@ -125,7 +129,9 @@ class VideoTracker(object):
                     for bb_xyxy in bbox_xyxy:
                         bbox_tlwh.append(self.deepsort._xyxy_to_tlwh(bb_xyxy))
 
-                    results.append((idx_frame - 1, bbox_tlwh, identities))
+                    results.append(
+                        (idx_frame - 1, bbox_tlwh, identities,
+                         [self.cfg.classes[str(int(c))] for c in cls]))
 
                 end = time.time()
 
@@ -143,8 +149,13 @@ class VideoTracker(object):
                 self.logger.info("frame: {}, time: {:.03f}s, fps: {:.03f}, detection numbers: {}, tracking numbers: {}" \
                                 .format(idx_frame, end - start, 1 / (end - start), bbox_xywh.shape[0], len(outputs)))
             else:
+                end = time.time()
+                if end - start < 0.2:
+                    time.sleep(0.2 - (end - start))
                 self.logger.info(f'帧 {idx_frame} 没有对象。')
                 
+                if self.args.save_path:
+                    self.writer.write(ori_im)
 
 
 def parse_args():
@@ -153,6 +164,9 @@ def parse_args():
     parser.add_argument("--config_detection",
                         type=str,
                         default="./configs/yolov3.yaml")
+    parser.add_argument("--config_classes",
+                        type=str,
+                        default="./configs/classes.yaml")
     parser.add_argument("--config_deepsort",
                         type=str,
                         default="./configs/deep_sort.yaml")
@@ -166,11 +180,12 @@ def parse_args():
                         dest="use_cuda",
                         action="store_false",
                         default=True)
-    parser.add_argument("--camera",
-                        action="store",
-                        dest="cam",
-                        # type=int,
-                        default=-1)
+    parser.add_argument(
+        "--camera",
+        action="store",
+        dest="cam",
+        # type=int,
+        default=-1)
     return parser.parse_args()
 
 
@@ -178,8 +193,9 @@ if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     args = parse_args()
     cfg = get_config()
-    cfg.merge_from_file(args.config_detection)
+    # cfg.merge_from_file(args.config_detection)
     cfg.merge_from_file(args.config_deepsort)
+    cfg.merge_from_file(args.config_classes)
 
     with VideoTracker(cfg, args, video_path=args.VIDEO_PATH) as vdo_trk:
         vdo_trk.run()

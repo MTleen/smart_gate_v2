@@ -1,3 +1,12 @@
+'''
+Description: 
+Author: Shengxiang Hu
+Github: https://github.com/MTleen
+Date: 2021-02-01 00:41:22
+LastEditors: Shengxiang Hu
+LastEditTime: 2021-02-01 16:35:15
+FilePath: /smart_gate_v2/man_utils/draw.py
+'''
 import numpy as np
 import cv2
 

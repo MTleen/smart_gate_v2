@@ -10,8 +10,8 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "pythonPath": "/Users/hushengxiang/anaconda3/envs/torch/bin/python",
-            "args": ["./videos/test2.mp4", "--display"]
+            "python": "/home/mathripper/anaconda3/envs/torch/bin/python",
+            "args": ["./videos/test2.mp4", "--camera", ""]
         }
     ]
 }
