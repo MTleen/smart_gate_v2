@@ -6,7 +6,6 @@ import torch
 import warnings
 import numpy as np
 
-from detector import build_detector
 from deep_sort import build_tracker
 from man_utils.draw import draw_boxes
 from man_utils.parser import get_config
