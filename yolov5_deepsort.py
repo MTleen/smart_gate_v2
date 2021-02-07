@@ -37,6 +37,7 @@ class VideoTracker(object):
         else:
             self.vdo = cv2.VideoCapture()
         # self.detector = build_detector(cfg, use_cuda=use_cuda)
+        # 构建目标检测器
         self.detector = torch.hub.load('ultralytics/yolov5',
                                        'yolov5s',
                                        pretrained=True,
@@ -44,7 +45,7 @@ class VideoTracker(object):
         self.detector.conf = 0.5
         classes = list(self.cfg.classes.keys())[:-2]
         self.detector.classes = list(map(lambda x: int(x), classes))
-
+        # 构建目标跟踪器
         self.deepsort = build_tracker(cfg, use_cuda=use_cuda)
 
     def __enter__(self):
