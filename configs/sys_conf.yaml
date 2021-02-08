@@ -1,18 +1,18 @@
 sys:
   gate_server_url: "http://127.0.0.1:1880/gate"
   baidu:
-    access_token_url:
+    access_token:
       base_url: "https://aip.baidubce.com/oauth/2.0/token"
       params:
         grant_type: "client_credentials"
         client_id: "0V8w14CdUFW2q8hzG11wjVKC"
         client_secret: "mGGtPZpIx5FlkBFL2Eus3oVUaiIfq74h"
-      access_token: ""
+      token: ""
       fresh_time: ""
     face_search:
       base_url: "https://aip.baidubce.com/rest/2.0/face/v3/search"
       params:
-        image: "",
+        image: ""
         image_type: "BASE64"
         group_id_list: "home"
     license_plate:

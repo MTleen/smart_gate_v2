@@ -1,3 +1,4 @@
+import logging
 import os
 import cv2
 import time
@@ -7,6 +8,8 @@ import warnings
 import numpy as np
 import base64
 import requests
+from threading import Timer
+import yaml
 
 from deep_sort import build_tracker
 from man_utils.draw import draw_boxes
@@ -24,8 +27,12 @@ class VideoTracker(object):
         self.args = args
         self.video_path = video_path
         self.cur_objects = {}
-        self.logger = get_logger("root")
+        # self.logger = get_logger("root")
         self.is_close = False
+        self.int2command = {
+            0: "开门",
+            1: "关门"
+        }
 
         use_cuda = args.use_cuda and torch.cuda.is_available()
         if not use_cuda:
@@ -83,7 +90,7 @@ class VideoTracker(object):
                                           (self.im_width, self.im_height))
 
             # logging
-            self.logger.info("Save results to {}".format(self.args.save_path))
+            logging.info("Save results to {}".format(self.args.save_path))
 
         return self
 
@@ -124,13 +131,21 @@ class VideoTracker(object):
 
                     for i, xyxy, c in zip(identities, bbox_xyxy, cls):
                         if not str(i) in self.cur_objects.keys():
-                            self.cur_objects[str(i)]['class'] = int(c)
-                            self.cur_objects[str(i)]['init'] = xyxy
-                            self.cur_objects[str(i)]['current'] = xyxy
+                            self.cur_objects[str(i)] = {
+                                'class': int(c),
+                                'init': xyxy,
+                                'current': xyxy
+                            }
+                            if xyxy[0] < 200:
+                                self.is_close = True
                         else:
                             self.cur_objects[str(i)]['current'] = xyxy
 
-                    command = self.get_command(ori_im)
+                    command, res = self.get_command(ori_im)
+                    if command:
+                        self.cur_objects = {}
+                        logging.info(f'指令：{self.int2command[command]}')
+                    logging.info(self.cur_objects)
 
                     ori_im = draw_boxes(ori_im, bbox_xyxy, identities)
 
@@ -151,9 +166,13 @@ class VideoTracker(object):
                 write_results(self.save_results_path, results, 'mot')
 
                 # logging
-                self.logger.info("frame: {}, time: {:.03f}s, fps: {:.03f}, detection numbers: {}, tracking numbers: {}" \
-                                .format(idx_frame, end - start, 1 / (end - start), bbox_xywh.shape[0], len(outputs)))
+                # logging.info("frame: {}, time: {:.03f}s, fps: {:.03f}, detection numbers: {}, tracking numbers: {}" \
+                #                 .format(idx_frame, end - start, 1 / (end - start), bbox_xywh.shape[0], len(outputs)))
             else:
+                # 视野里没有对象，清空对象字典
+                if len(self.cur_objects) > 0:
+                    self.cur_objects = {}
+
                 if self.args.save_path:
                     self.writer.write(ori_im)
                 end = time.time()
@@ -161,50 +180,73 @@ class VideoTracker(object):
                     time.sleep(0.2 - (end - start))
                 print(f'帧 {idx_frame} 没有对象。')
 
-    def is_open(self):
-        pass
-
     def get_command(self, ori_im):
         """
         开门逻辑：任何一个目标符合开门条件就开门
         关门逻辑：所有需要判定是否关门的目标都满足关门条件
         """
-        for k, v in self.cur_objects.items():
-            init = v['init'][0]
-            current = v['current'][0]
-            # 判断是否开门
-            if init > 550 and current < 500:
-                pic_str = base64.b64encode(cv2.imencode('.jpeg', ori_im))
-                access_token = self.cfg['sys']['baidu']['access_token_url']['access_token']
-                if v['class'] == 0:
-                    request_url = self.cfg['sys']['baidu']['face_search']['base_url']
-                    params = self.cfg['sys']['baidu']['face_search']['params']
-                    params['image'] = pic_str
-                    request_url = request_url + "?access_token=" + access_token
-                    headers = {'content-type': 'application/json'}
-                    response = requests.post(request_url, data=params, headers=headers)
-                    result = response.json()
-                    if result['error_code'] == 0 and len(
-                            result['result']['user_list']) > 0:
-                        for user in result['result']['user_list']:
-                            if user['score'] > 75:
-                                return 0, time.time() * 1000, result
-                elif v['class'] == 2:
-                    request_url = self.cfg['sys']['baidu']['license_plate'][
-                        'base_url']
-                    params = self.cfg['sys']['baidu']['license_plate'][
-                        'params']
-                    params['image'] = pic_str
-                    headers = {
-                        'content-type': 'application/x-www-form-urlencoded'
-                    }
-                    response = requests.post(request_url, data=params, headers=headers)
-                    result = response.json()
-                    if 'error_code' not in result.keys() and (
-                    result['words_result']['number'] in self.cfg['license']):
-                        return 0, time.time() * 1000, result
-        
-        return None
+        command = None
+        res = None
+        if self.is_close:
+            # 进入关门判定流程
+            command = 1
+            for v in self.cur_objects.values():
+                if v['init'][0] < 200 and v['current'][0] < 550:
+                    command = None
+                    break
+        else:
+            # 进入开门判定流程
+            pic_str = base64.b64encode(cv2.imencode('.jpeg', ori_im)[1]).decode()
+            for v in self.cur_objects.values():
+                init = v['init'][0]
+                current = v['current'][0]
+                # 判断是否开门
+                if init > 550 and current <400:
+                    access_token = self.cfg['sys']['baidu'][
+                        'access_token']['token']
+                    if v['class'] == 0:
+                        # 人脸识别
+                        request_url = self.cfg['sys']['baidu']['face_search'][
+                            'base_url']
+                        params = self.cfg['sys']['baidu']['face_search'][
+                            'params']
+                        params['image'] = pic_str
+                        request_url = request_url + "?access_token=" + access_token
+                        headers = {'content-type': 'application/json'}
+                        response = requests.post(request_url,
+                                                 data=params,
+                                                 headers=headers)
+                        result = response.json()
+                        print(result)
+                        if result['error_code'] == 0 and len(
+                                result['result']['user_list']) > 0:
+                            if any(user['score'] > 75
+                                   for user in result['result']['user_list']):
+                                command = 0
+                                res = result
+                                break
+                    elif v['class'] == 2:
+                        # 车牌识别
+                        request_url = self.cfg['sys']['baidu'][
+                            'license_plate']['base_url']
+                        params = self.cfg['sys']['baidu']['license_plate'][
+                            'params']
+                        params['image'] = pic_str
+                        headers = {
+                            'content-type': 'application/x-www-form-urlencoded'
+                        }
+                        response = requests.post(request_url,
+                                                 data=params,
+                                                 headers=headers)
+                        result = response.json()
+                        if 'error_code' not in result.keys() and (
+                                result['words_result']['number']
+                                in self.cfg['license']):
+                            command = 0
+                            res = result
+                            break
+        return command, res
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -242,6 +284,17 @@ def parse_args():
         default=-1)
     return parser.parse_args()
 
+def check_accesstoken(cfg, args):
+    now = time.time()
+    last_update = cfg.sys.baidu.access_token.fresh_time
+    if not last_update or now - last_update > 5*24*3600:
+        host = cfg['sys']['baidu']['access_token']['base_url']
+        params = cfg['sys']['baidu']['access_token']['params']
+        res = requests.get(host, params=params)
+        token = res.json()['access_token']
+        cfg['sys']['baidu']['access_token']['token'] = token
+        logging.info('更新 access_token。')
+
 
 if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -252,6 +305,12 @@ if __name__ == "__main__":
     cfg.merge_from_file(args.config_classes)
     cfg.merge_from_file(args.config_sys)
     cfg.merge_from_file(args.config_license)
+
+    logger = get_logger()
+
+    check_accesstoken(cfg, args)
+    update_token = Timer(24*3600, check_accesstoken, (cfg, args))
+    update_token.start()
 
     with VideoTracker(cfg, args, video_path=args.VIDEO_PATH) as vdo_trk:
         vdo_trk.run()

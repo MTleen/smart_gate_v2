@@ -8,7 +8,7 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/yolov5_deepsort.py",
+            "program": "${workspaceFolder}/detect.py",
             "console": "integratedTerminal",
             "python": "/home/mathripper/anaconda3/envs/torch/bin/python",
             "args": ["./videos/test2.mp4"]
