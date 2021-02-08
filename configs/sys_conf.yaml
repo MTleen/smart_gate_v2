@@ -1,4 +1,5 @@
 sys:
+  mode: 0
   gate_server_url: "http://127.0.0.1:1880/gate"
   baidu:
     access_token:
