@@ -5,6 +5,9 @@ build/
 output/
 videos/
 logs/
+temp/
+webserver/
+
 
 
 # Files

@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import math
 
 from .deep.feature_extractor import Extractor
 from .sort.nn_matching import NearestNeighborDistanceMetric
@@ -99,6 +100,13 @@ class DeepSort(object):
         w = int(x2-x1)
         h = int(y2-y1)
         return t,l,w,h
+
+    def _xyxy_to_dis(self, bbox_xyxy, ini_x, ini_y):
+        x1, y1, x2, y2 = bbox_xyxy
+        cent_x = (x1+x2) / 2
+        cent_y = (y1+y2) / 2
+        dis = math.sqrt(pow(cent_x-ini_x)+pow(cent_y-ini_y))
+        return dis
     
     def _get_features(self, bbox_xywh, ori_img):
         im_crops = []
