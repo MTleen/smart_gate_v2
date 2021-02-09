@@ -4,7 +4,7 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-07 23:12:03
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-02-09 02:03:28
+LastEditTime: 2021-02-09 17:12:59
 FilePath: /smart_gate_v2/controller.py
 '''
 from flask import Flask
@@ -20,19 +20,6 @@ from man_utils.log import get_logger
 from detect import VideoTracker, check_accesstoken
 
 app = Flask(__name__)
-mode = 0
-
-def send_command(mode):
-    if mode == 0:
-        url = cfg.sys.gate_server_url
-        params = {
-            'operation': request.form['command'],
-            'number': request.form['number']
-        }
-        res = requests.get(url, params=params, timeout=5)
-        return res.json()
-    else:
-        return "现在处在手动模式，自动指令无效。"
 
 def parse_args():
     parser = argparse.ArgumentParser()
