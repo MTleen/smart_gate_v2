@@ -199,6 +199,8 @@ class VideoTracker(object):
         """
         command = None
         res = None
+        face = True
+        car = True
         if self.is_close:
             # 进入关门判定流程
             command = 2
@@ -217,7 +219,7 @@ class VideoTracker(object):
                 if init > 550 and current < 250:
                     access_token = self.cfg['sys']['baidu']['access_token'][
                         'token']
-                    if v['class'] == 0:
+                    if v['class'] == 0 and face:
                         # 人脸识别
                         request_url = self.cfg['sys']['baidu']['face_search'][
                             'base_url']
@@ -240,8 +242,8 @@ class VideoTracker(object):
                                    for user in result['result']['user_list']):
                                 command = 1
                                 res = result
-                        break
-                    elif v['class'] == 2:
+                        face = False
+                    elif v['class'] == 2 and car:
                         # 车牌识别
                         request_url = self.cfg['sys']['baidu'][
                             'license_plate']['base_url']
@@ -260,7 +262,7 @@ class VideoTracker(object):
                                 in self.cfg['license']):
                             command = 1
                             res = result
-                        break
+                        car = False
         return command, res
 
     def send_command(self, mode, command, number):
