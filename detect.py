@@ -240,7 +240,7 @@ class VideoTracker(object):
                                    for user in result['result']['user_list']):
                                 command = 1
                                 res = result
-                                break
+                        break
                     elif v['class'] == 2:
                         # 车牌识别
                         request_url = self.cfg['sys']['baidu'][
@@ -260,7 +260,7 @@ class VideoTracker(object):
                                 in self.cfg['license']):
                             command = 1
                             res = result
-                            break
+                        break
         return command, res
 
     def send_command(self, mode, command, number):
