@@ -11,6 +11,7 @@ import base64
 import requests
 from threading import Timer
 import yaml
+import math
 
 from deep_sort import build_tracker
 from man_utils.draw import draw_boxes
@@ -53,7 +54,7 @@ class VideoTracker(object):
                                        'yolov5s',
                                        pretrained=True,
                                        force_reload=False)
-        self.detector.conf = 0.5
+        self.detector.conf = 0.85
         classes = list(self.cfg.classes.keys())[:-2]
         self.detector.classes = list(map(lambda x: int(x), classes))
         # 构建目标跟踪器
@@ -103,7 +104,7 @@ class VideoTracker(object):
         results = []
         # idx_frame = 0
         while self.vdo.read_latest_frame():
-        # while self.vdo.grab():
+            # while self.vdo.grab():
             # idx_frame += 1
             # if idx_frame % self.args.frame_interval:
             #     continue
@@ -130,17 +131,7 @@ class VideoTracker(object):
                     for bb_xyxy in bbox_xyxy:
                         bbox_tlwh.append(self.deepsort._xyxy_to_tlwh(bb_xyxy))
 
-                    for i, xyxy, c in zip(identities, bbox_xyxy, cls):
-                        if not str(i) in self.cur_objects.keys():
-                            self.cur_objects[str(i)] = {
-                                'class': int(c),
-                                'init': xyxy,
-                                'current': xyxy
-                            }
-                            if xyxy[0] < 200:
-                                self.is_close = True
-                        else:
-                            self.cur_objects[str(i)]['current'] = xyxy
+                    self.update_curobjects(identities, bbox_xyxy, cls)
 
                     command, res = self.get_command(ori_im)
                     # 执行指令
@@ -152,7 +143,9 @@ class VideoTracker(object):
                             res['words_result']['number']
                             if isinstance(res, dict)
                             and 'words_result' in res.keys() else None)
-                        logging.info(f'触发条件：{res}，\n执行指令：{self.int2command[command]}，\n执行结果：{exec_res}')
+                        logging.info(
+                            f'触发条件：{res}，\n执行指令：{self.int2command[command]}，\n执行结果：{exec_res}'
+                        )
                         # logging.info(f'执行指令：{self.int2command[command]}')
 
                         time.sleep(10)
@@ -163,7 +156,9 @@ class VideoTracker(object):
                     if self.args.save_path:
                         results.append(
                             (bbox_tlwh, identities,
-                            [self.cfg.classes[str(int(c))] for c in cls]))
+                             [self.cfg.classes[str(int(c))] for c in cls]))
+
+                    time.sleep(0.5)
 
                 end = time.time()
 
@@ -176,7 +171,6 @@ class VideoTracker(object):
 
                     # save results
                     write_results(self.save_results_path, results, 'mot')
-
                 # logging
                 # logging.info("frame: {}, time: {:.03f}s, fps: {:.03f}, detection numbers: {}, tracking numbers: {}" \
                 #                 .format(idx_frame, end - start, 1 / (end - start), bbox_xywh.shape[0], len(outputs)))
@@ -190,7 +184,29 @@ class VideoTracker(object):
                 if end - start < 0.2:
                     time.sleep(0.2 - (end - start))
                 print('当前画面没有对象。')
-            time.sleep(0.5)
+
+    def update_curobjects(self, identities, bbox_xyxy, cls):
+        for i, xyxy, c in zip(identities, bbox_xyxy, cls):
+                        if not str(i) in self.cur_objects.keys():
+                            self.cur_objects[str(i)] = {
+                                'class': int(c),
+                                'init': xyxy,
+                                'current': xyxy
+                            }
+                            if self.xyxy2dis(
+                                    xyxy) < self.cfg.sys.metrics.close.start:
+                                self.is_close = True
+                        else:
+                            self.cur_objects[str(i)]['current'] = xyxy
+        for i in list(set(self.cur_objects.keys()).difference(set(identities))):
+            del self.cur_objects[i]
+
+    def xyxy2dis(self, xyxy):
+        return math.sqrt(
+            math.pow((xyxy[0] + xyxy[2]) / 2 -
+                     self.cfg.sys.metircs.coordinate.x) +
+            math.pow((xyxy[1] + xyxy[3]) / 2 -
+                     self.cfg.sys.metircs.coordinate.y))
 
     def get_command(self, ori_im):
         """
@@ -205,18 +221,20 @@ class VideoTracker(object):
             # 进入关门判定流程
             command = 2
             for v in self.cur_objects.values():
-                if v['init'][0] < 200 and v['current'][0] < 550:
-                    command = None
+                if self.xyxy2dis(
+                        v['init']
+                ) < self.cfg.sys.metrics.close.start and self.xyxy2dis(
+                        v['current']) < self.cfg.sys.metrics.close.end:
                     break
         else:
             # 进入开门判定流程
             pic_str = base64.b64encode(cv2.imencode('.jpeg',
                                                     ori_im)[1]).decode()
             for v in self.cur_objects.values():
-                init = v['init'][0]
-                current = v['current'][0]
+                init = self.xyxy2dis(v['init'])
+                current = self.xyxy2dis(v['current'])
                 # 判断是否开门
-                if init > 550 and current < 250:
+                if init > self.cfg.sys.metrics.open.start and current < self.cfg.sys.metrics.open.end:
                     access_token = self.cfg['sys']['baidu']['access_token'][
                         'token']
                     if v['class'] == 0 and face:
@@ -279,6 +297,7 @@ class VideoTracker(object):
             self.cur_objects = {}
         if self.is_close == True:
             self.is_close = False
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
