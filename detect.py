@@ -71,9 +71,8 @@ class VideoTracker(object):
             assert os.path.isfile(self.video_path), "Path error"
             self.vdo.open(self.video_path)
             assert self.vdo.isOpened()
-
-        self.im_width = int(self.vdo.get(cv2.CAP_PROP_FRAME_WIDTH))
-        self.im_height = int(self.vdo.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            self.im_width = int(self.vdo.get(cv2.CAP_PROP_FRAME_WIDTH))
+            self.im_height = int(self.vdo.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         if self.args.save_path:
             os.makedirs(self.args.save_path, exist_ok=True)
@@ -104,7 +103,7 @@ class VideoTracker(object):
         results = []
         # idx_frame = 0
         while self.vdo.read_latest_frame():
-            # while self.vdo.grab():
+        # while self.vdo.grab():
             # idx_frame += 1
             # if idx_frame % self.args.frame_interval:
             #     continue
@@ -126,18 +125,21 @@ class VideoTracker(object):
                 if len(outputs) > 0:
                     bbox_tlwh = []
                     bbox_xyxy = outputs[:, :4]
+                    if self.video_path:
+                        bbox_xyxy = bbox_xyxy * 1920 / self.im_width
                     identities = outputs[:, -1]
 
                     for bb_xyxy in bbox_xyxy:
                         bbox_tlwh.append(self.deepsort._xyxy_to_tlwh(bb_xyxy))
 
-                    self.update_curobjects(identities, bbox_xyxy, cls)
+                    self.update_curobjects(identities.tolist(), bbox_xyxy, cls)
+                    logging.info(self.cur_objects)
 
                     command, res = self.get_command(ori_im)
                     # 执行指令
                     if command:
                         self.reset_states()
-
+                        
                         exec_res = self.send_command(
                             self.cfg.sys.mode, self.int2command[command],
                             res['words_result']['number']
@@ -149,17 +151,16 @@ class VideoTracker(object):
                         # logging.info(f'执行指令：{self.int2command[command]}')
 
                         time.sleep(10)
-                    logging.info(self.cur_objects)
 
                     ori_im = draw_boxes(ori_im, bbox_xyxy, identities)
-                    save_img(ori_im)
+                    
                     if self.args.save_path:
                         results.append(
                             (bbox_tlwh, identities,
                              [self.cfg.classes[str(int(c))] for c in cls]))
 
                     time.sleep(0.5)
-
+                save_img(ori_im)
                 end = time.time()
 
                 if self.args.display:
@@ -187,26 +188,27 @@ class VideoTracker(object):
 
     def update_curobjects(self, identities, bbox_xyxy, cls):
         for i, xyxy, c in zip(identities, bbox_xyxy, cls):
-                        if not str(i) in self.cur_objects.keys():
-                            self.cur_objects[str(i)] = {
-                                'class': int(c),
-                                'init': xyxy,
-                                'current': xyxy
-                            }
-                            if self.xyxy2dis(
-                                    xyxy) < self.cfg.sys.metrics.close.start:
-                                self.is_close = True
-                        else:
-                            self.cur_objects[str(i)]['current'] = xyxy
-        for i in list(set(self.cur_objects.keys()).difference(set(identities))):
+            dis = self.xyxy2dis(xyxy)
+            if not str(i) in self.cur_objects.keys():
+                self.cur_objects[str(i)] = {
+                    'class': int(c),
+                    'init': dis,
+                    'current': dis
+                }
+                if dis < self.cfg.sys.metrics.close.start:
+                    self.is_close = True
+            else:
+                self.cur_objects[str(i)]['current'] = dis
+        for i in list(
+                set(self.cur_objects.keys()).difference(set(map(lambda x: str(x), identities)))):
             del self.cur_objects[i]
 
     def xyxy2dis(self, xyxy):
         return math.sqrt(
             math.pow((xyxy[0] + xyxy[2]) / 2 -
-                     self.cfg.sys.metircs.coordinate.x) +
+                     self.cfg.sys.metrics.coordinate.x, 2) +
             math.pow((xyxy[1] + xyxy[3]) / 2 -
-                     self.cfg.sys.metircs.coordinate.y))
+                     self.cfg.sys.metrics.coordinate.y, 2))
 
     def get_command(self, ori_im):
         """
@@ -221,18 +223,16 @@ class VideoTracker(object):
             # 进入关门判定流程
             command = 2
             for v in self.cur_objects.values():
-                if self.xyxy2dis(
-                        v['init']
-                ) < self.cfg.sys.metrics.close.start and self.xyxy2dis(
-                        v['current']) < self.cfg.sys.metrics.close.end:
+                if v['init'] < self.cfg.sys.metrics.close.start and v['current'] < self.cfg.sys.metrics.close.end:
+                    command = None
                     break
         else:
             # 进入开门判定流程
             pic_str = base64.b64encode(cv2.imencode('.jpeg',
                                                     ori_im)[1]).decode()
             for v in self.cur_objects.values():
-                init = self.xyxy2dis(v['init'])
-                current = self.xyxy2dis(v['current'])
+                init = v['init']
+                current = v['current']
                 # 判断是否开门
                 if init > self.cfg.sys.metrics.open.start and current < self.cfg.sys.metrics.open.end:
                     access_token = self.cfg['sys']['baidu']['access_token'][
@@ -366,8 +366,8 @@ if __name__ == "__main__":
     update_token.start()
     try:
         with VideoTracker(cfg, args, args.video_path) as vdo_trk:
-            vdo_trk.run()
+          vdo_trk.run()
     except Exception as e:
-        logging.exception()
+        logging.exception('检测出错')
         with VideoTracker(cfg, args, args.video_path) as vdo_trk:
             vdo_trk.run()

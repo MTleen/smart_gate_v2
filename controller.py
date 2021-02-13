@@ -4,7 +4,7 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-07 23:12:03
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-02-09 17:12:59
+LastEditTime: 2021-02-10 14:15:39
 FilePath: /smart_gate_v2/controller.py
 '''
 from flask import Flask
@@ -12,18 +12,27 @@ from flask import request
 import os
 import requests
 import yaml
+import json
 import argparse
 from threading import Timer
+import logging
+from easydict import EasyDict as edict
 
-from man_utils.parser import get_config
+from man_utils.parser import merge_from_file
 from man_utils.log import get_logger
 from detect import VideoTracker, check_accesstoken
 
 app = Flask(__name__)
 
+@app.route('/set_mode')
+def set_mode():
+    cfg.sys.mode = request.args.get('mode', 1)
+
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("VIDEO_PATH", type=str)
+    parser.add_argument("--video_path", type=str)
     parser.add_argument("--config_detection",
                         type=str,
                         default="./configs/yolov3.yaml")
@@ -44,7 +53,8 @@ def parse_args():
     parser.add_argument("--frame_interval", type=int, default=1)
     parser.add_argument("--display_width", type=int, default=1920)
     parser.add_argument("--display_height", type=int, default=1080)
-    parser.add_argument("--save_path", type=str, default="./output/")
+    # parser.add_argument("--save_path", type=str, default="./output/")
+    parser.add_argument("--save_path", type=str, default="")
     parser.add_argument("--use_cuda",
                         dest="use_cuda",
                         action="store_false",
@@ -61,21 +71,28 @@ def parse_args():
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    app.run()
-
+    # app.run()
     args = parse_args()
-    cfg = get_config()
+    cfg = edict()
     # cfg.merge_from_file(args.config_detection)
-    cfg.merge_from_file(args.config_deepsort)
-    cfg.merge_from_file(args.config_classes)
-    cfg.merge_from_file(args.config_sys)
-    cfg.merge_from_file(args.config_license)
+    merge_from_file(
+        cfg, args.config_deepsort, args.config_classes, args.config_sys, args.config_license)
+    # merge_from_file(cfg, args.config_classes)
+    # cfg.merge_from_file(args.config_sys)
+    # cfg.merge_from_file(args.config_license)
+
+    with open('./configs/test.yaml', 'w') as f:
+        yaml.dump(cfg['sys'], f)
 
     logger = get_logger()
 
     check_accesstoken(cfg, args)
     update_token = Timer(24 * 3600, check_accesstoken, (cfg, args))
     update_token.start()
-
-    with VideoTracker(cfg, args, video_path=args.VIDEO_PATH) as vdo_trk:
-        vdo_trk.run()
+    try:
+        with VideoTracker(cfg, args, args.video_path) as vdo_trk:
+            vdo_trk.run()
+    except Exception as e:
+        logging.exception('检测出错')
+        with VideoTracker(cfg, args, args.video_path) as vdo_trk:
+            vdo_trk.run()

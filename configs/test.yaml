@@ -1,0 +1,87 @@
+sys: !!python/object/new:easydict.EasyDict
+  dictitems:
+    baidu: &id010 !!python/object/new:easydict.EasyDict
+      dictitems:
+        access_token: &id004 !!python/object/new:easydict.EasyDict
+          dictitems:
+            base_url: https://aip.baidubce.com/oauth/2.0/token
+            fresh_time: ''
+            params: &id001 !!python/object/new:easydict.EasyDict
+              dictitems:
+                client_id: 0V8w14CdUFW2q8hzG11wjVKC
+                client_secret: mGGtPZpIx5FlkBFL2Eus3oVUaiIfq74h
+                grant_type: client_credentials
+              state:
+                client_id: 0V8w14CdUFW2q8hzG11wjVKC
+                client_secret: mGGtPZpIx5FlkBFL2Eus3oVUaiIfq74h
+                grant_type: client_credentials
+            token: ''
+          state:
+            base_url: https://aip.baidubce.com/oauth/2.0/token
+            fresh_time: ''
+            params: *id001
+            token: ''
+        face_search: &id005 !!python/object/new:easydict.EasyDict
+          dictitems:
+            base_url: https://aip.baidubce.com/rest/2.0/face/v3/search
+            params: &id002 !!python/object/new:easydict.EasyDict
+              dictitems:
+                group_id_list: home
+                image: ''
+                image_type: BASE64
+              state:
+                group_id_list: home
+                image: ''
+                image_type: BASE64
+          state:
+            base_url: https://aip.baidubce.com/rest/2.0/face/v3/search
+            params: *id002
+        license_plate: &id006 !!python/object/new:easydict.EasyDict
+          dictitems:
+            base_url: https://aip.baidubce.com/rest/2.0/ocr/v1/license_plate
+            params: &id003 !!python/object/new:easydict.EasyDict
+              dictitems:
+                image: ''
+              state:
+                image: ''
+          state:
+            base_url: https://aip.baidubce.com/rest/2.0/ocr/v1/license_plate
+            params: *id003
+      state:
+        access_token: *id004
+        face_search: *id005
+        license_plate: *id006
+    gate_server_url: http://127.0.0.1:1880/gate
+    metrics: &id011 !!python/object/new:easydict.EasyDict
+      dictitems:
+        close: &id007 !!python/object/new:easydict.EasyDict
+          dictitems:
+            end: 1100
+            start: 600
+          state:
+            end: 1100
+            start: 600
+        coordinate: &id008 !!python/object/new:easydict.EasyDict
+          dictitems:
+            x: 0
+            y: 500
+          state:
+            x: 0
+            y: 500
+        open: &id009 !!python/object/new:easydict.EasyDict
+          dictitems:
+            end: 950
+            start: 1100
+          state:
+            end: 950
+            start: 1100
+      state:
+        close: *id007
+        coordinate: *id008
+        open: *id009
+    mode: 0
+  state:
+    baidu: *id010
+    gate_server_url: http://127.0.0.1:1880/gate
+    metrics: *id011
+    mode: 0

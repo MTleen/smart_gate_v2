@@ -4,14 +4,15 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        {"name":"Python: Current File","type":"python","request":"launch","program":"${file}","console":"integratedTerminal"},
         {
-            "name": "Python: Current File",
+            "name": "detect",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/detect.py",
             "console": "integratedTerminal",
             "python": "/home/mathripper/anaconda3/envs/torch/bin/python",
-            "args": ["--video_path", "./videos/out.mp4"]
+            "args": ["--video_path", "./videos/in.mp4"]
             // "args": ["--camera", "rtsp://admin:HikLZDADB@192.168.1.27:554/h264/ch1/main"]
         }
     ]
