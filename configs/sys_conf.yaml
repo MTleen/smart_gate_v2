@@ -6,11 +6,16 @@ sys:
       x: 0
       y: 500
     close: 
-      start: 600
-      end: 1100
+      start: 
+        '0': 600
+        '2': 900
+      end: 1150
     open:
-      start: 600
-      end: 900
+      start: 1000
+      end: 
+        '0': 900
+        '2': 1000
+
   baidu:
     access_token:
       base_url: "https://aip.baidubce.com/oauth/2.0/token"
