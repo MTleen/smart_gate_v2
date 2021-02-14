@@ -102,8 +102,8 @@ class VideoTracker(object):
             '############################# 开始检测 #############################')
         results = []
         # idx_frame = 0
-        # while self.vdo.read_latest_frame():
-        while self.vdo.grab():
+        while self.vdo.read_latest_frame():
+            # while self.vdo.grab():
             # idx_frame += 1
             # if idx_frame % self.args.frame_interval:
             #     continue
@@ -355,6 +355,17 @@ def check_accesstoken(cfg, args):
         token = res.json()['access_token']
         cfg['sys']['baidu']['access_token']['token'] = token
         logging.info('更新 access_token。')
+    
+    global update_token
+    update_token = Timer(24 * 3600, check_accesstoken, (cfg, args))
+    update_token.start()
+
+
+def heartbeat():
+    logging.info('*************** heart beat ***************')
+    global hbt
+    hbt = Timer(3600, heartbeat)
+    hbt.start()
 
 
 if __name__ == "__main__":
@@ -370,8 +381,9 @@ if __name__ == "__main__":
     logger = get_logger()
 
     check_accesstoken(cfg, args)
-    update_token = Timer(24 * 3600, check_accesstoken, (cfg, args))
-    update_token.start()
+
+    heartbeat()
+
     try:
         with VideoTracker(cfg, args, args.video_path) as vdo_trk:
             vdo_trk.run()
