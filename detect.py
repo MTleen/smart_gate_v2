@@ -156,7 +156,7 @@ class VideoTracker(object):
                         )
                         # logging.info(f'执行指令：{self.int2command[command]}')
 
-                        time.sleep(10)
+                        time.sleep(20)
 
                     ori_im = draw_boxes(ori_im, bbox_xyxy, identities)
 
