@@ -403,6 +403,7 @@ if __name__ == "__main__":
     logger = get_logger()
 
     check_accesstoken(cfg, args)
+    heartbeat()
 
     try:
         with VideoTracker(cfg, args, args.video_path) as vdo_trk:
