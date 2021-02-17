@@ -1,5 +1,5 @@
 sys:
-  mode: 0
+  mode: 1
   gate_server_url: "http://127.0.0.1:1880/gate"
   metrics:
     coordinate:
@@ -9,13 +9,12 @@ sys:
       start: 
         '0': 600
         '2': 900
-      end: 1150
+      end: 1100
     open:
       start: 1000
       end: 
         '0': 900
         '2': 1000
-
   baidu:
     access_token:
       base_url: "https://aip.baidubce.com/oauth/2.0/token"

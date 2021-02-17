@@ -102,13 +102,20 @@ class VideoTracker(object):
             '############################# 开始检测 #############################')
         results = []
         # idx_frame = 0
-        while self.vdo.read_latest_frame():
+        while True:
+            self.vdo.read_latest_frame()
             # while self.vdo.grab():
             # idx_frame += 1
             # if idx_frame % self.args.frame_interval:
             #     continue
             start = time.time()
-            _, ori_im = self.vdo.retrieve()
+            if self.args.cam != -1:
+                ref, ori_im = self.vdo.read_latest_frame()
+            else:
+                ref, ori_im = self.vdo.retrieve()
+            if not ref:
+                break
+
             im = cv2.cvtColor(ori_im, cv2.COLOR_BGR2RGB)
 
             # do detection
@@ -124,9 +131,6 @@ class VideoTracker(object):
                 if len(outputs) > 0:
                     bbox_tlwh = []
                     bbox_xyxy = outputs[:, :4]
-                    # bbox_xyxy = np.zeros_like(bbox_xywh)
-                    # for i, bb_xywh in enumerate(bbox_xywh):
-                    #     bbox_xyxy[i] = self.deepsort._xywh_to_xyxy(bb_xywh)
                     identities = outputs[:, -1]
 
                     if 2 in cls and sum(cls == 2)==1:
@@ -291,8 +295,8 @@ class VideoTracker(object):
                         car = False
         return command, res
 
-    def send_command(self, mode, command, number):
-        if mode == 0:
+    def send_command(self, command, number):
+        if self.cfg.sys.mode == 1:
             url = cfg.sys.gate_server_url
             params = {'operation': command, 'number': number}
             res = requests.get(url, params=params, timeout=5)
@@ -381,8 +385,6 @@ if __name__ == "__main__":
     logger = get_logger()
 
     check_accesstoken(cfg, args)
-
-    heartbeat()
 
     try:
         with VideoTracker(cfg, args, args.video_path) as vdo_trk:
