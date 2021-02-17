@@ -103,7 +103,6 @@ class VideoTracker(object):
         results = []
         # idx_frame = 0
         while True:
-            self.vdo.read_latest_frame()
             # while self.vdo.grab():
             # idx_frame += 1
             # if idx_frame % self.args.frame_interval:
@@ -114,7 +113,8 @@ class VideoTracker(object):
             else:
                 ref, ori_im = self.vdo.retrieve()
             if not ref:
-                break
+                logging.info('获取不到画面！')
+                continue
 
             im = cv2.cvtColor(ori_im, cv2.COLOR_BGR2RGB)
 
