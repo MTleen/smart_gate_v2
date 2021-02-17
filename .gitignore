@@ -8,6 +8,9 @@ logs/
 temp/
 webserver/
 
+test.ipynb
+yolov5_deepsort.py
+
 
 
 # Files

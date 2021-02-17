@@ -154,7 +154,7 @@ class VideoTracker(object):
                         self.reset_states()
 
                         exec_res = self.send_command(
-                            self.cfg.sys.mode, self.int2command[command],
+                            self.int2command[command],
                             res['words_result']['number']
                             if isinstance(res, dict)
                             and 'words_result' in res.keys() else None)
