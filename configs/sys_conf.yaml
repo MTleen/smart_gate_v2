@@ -11,6 +11,7 @@ sys:
         '2': 900
       end: 1100
     open:
+      width: 480
       start: 1000
       end: 
         '0': 900

@@ -12,8 +12,8 @@
             "program": "${workspaceFolder}/detect.py",
             "console": "integratedTerminal",
             "python": "/home/mathripper/anaconda3/envs/torch/bin/python",
-            // "args": ["--video_path", "./videos/in.mp4"]
-            "args": ["--camera", "rtsp://admin:HikLZDADB@192.168.1.27:554/h264/ch1/main"]
+            "args": ["--video_path", "./videos/in.mp4"]
+            // "args": ["--camera", "rtsp://admin:HikLZDADB@192.168.1.27:554/h265/ch1/main"]
         }
     ]
 }

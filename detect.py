@@ -57,6 +57,8 @@ class VideoTracker(object):
         self.detector.conf = 0.7
         classes = list(self.cfg.classes.keys())[:-2]
         self.detector.classes = list(map(lambda x: int(x), classes))
+        if use_cuda:
+            self.detector.cuda()
         # 构建目标跟踪器
         self.deepsort = build_tracker(cfg, use_cuda=use_cuda)
 
@@ -102,8 +104,8 @@ class VideoTracker(object):
             '############################# 开始检测 #############################')
         results = []
         # idx_frame = 0
-        while True:
-            # while self.vdo.grab():
+        while self.vdo.isStarted():
+        # while self.vdo.grab():
             # idx_frame += 1
             # if idx_frame % self.args.frame_interval:
             #     continue
@@ -114,6 +116,7 @@ class VideoTracker(object):
                 ref, ori_im = self.vdo.retrieve()
             if not ref:
                 logging.info('获取不到画面！')
+                time.sleep(1)
                 continue
 
             im = cv2.cvtColor(ori_im, cv2.COLOR_BGR2RGB)
@@ -123,9 +126,9 @@ class VideoTracker(object):
             if len(detector_result.pred) > 0 and len(
                     detector_result.pred[0] > 0):
 
-                bbox_xywh = detector_result.xywh[0][:, :4]
-                cls_conf = detector_result.pred[0][:, 4]
-                cls = detector_result.pred[0][:, -1]
+                bbox_xywh = detector_result.xywh[0][:, :4].cpu()
+                cls_conf = detector_result.pred[0][:, 4].cpu()
+                cls = detector_result.pred[0][:, -1].cpu()
                 outputs = self.deepsort.update(bbox_xywh, cls_conf, im)
                 # draw boxes for visualization
                 if len(outputs) > 0:
@@ -202,13 +205,22 @@ class VideoTracker(object):
             if not str(i) in self.cur_objects.keys():
                 self.cur_objects[str(i)] = {
                     'class': int(c),
-                    'init': dis,
-                    'current': dis
+                    'init': {
+                        'coord': xyxy,
+                        'dis': dis,
+                    },
+                    'current': {
+                        'coord': xyxy,
+                        'dis': dis
+                    }
                 }
                 if dis < self.cfg.sys.metrics.close.start[str(int(c.tolist()))]:
                     self.is_close = True
             else:
-                self.cur_objects[str(i)]['current'] = dis
+                self.cur_objects[str(i)]['current'] = {
+                    'coord': xyxy,
+                    'dis': dis
+                }
         for i in list(
                 set(self.cur_objects.keys()).difference(set(map(lambda x: str(x), identities)))):
             del self.cur_objects[i]
@@ -219,6 +231,12 @@ class VideoTracker(object):
                      self.cfg.sys.metrics.coordinate.x, 2) +
             math.pow((xyxy[1] + xyxy[3]) / 2 -
                      self.cfg.sys.metrics.coordinate.y, 2))
+
+    def xyxy2area(self, xyxy):
+        return abs((xyxy[0]-xyxy[2]) * (xyxy[1]-xyxy[3]))
+
+    def xyxy2width(self, xyxy):
+        return abs(xyxy[0] - xyxy[2])
 
     def get_command(self, ori_im):
         """
@@ -234,7 +252,7 @@ class VideoTracker(object):
             command = 2
             for v in self.cur_objects.values():
                 c = str(v['class'])
-                if v['init'] < self.cfg.sys.metrics.close.start[c] and v['current'] < self.cfg.sys.metrics.close.end:
+                if v['init']['dis'] < self.cfg.sys.metrics.close.start[c] and v['current']['dis'] < self.cfg.sys.metrics.close.end:
                     command = None
                     break
         else:
@@ -246,7 +264,7 @@ class VideoTracker(object):
                 init = v['init']
                 current = v['current']
                 # 判断是否开门
-                if init > current and current < self.cfg.sys.metrics.open.end[c]:
+                if current['dis'] < self.cfg.sys.metrics.open.end[c] or (self.xyxy2width(current['coord']) > self.cfg.sys.metrics.open.width and c == '0'):
                     access_token = self.cfg['sys']['baidu']['access_token'][
                         'token']
                     if v['class'] == 0 and face:
@@ -359,7 +377,7 @@ def check_accesstoken(cfg, args):
         token = res.json()['access_token']
         cfg['sys']['baidu']['access_token']['token'] = token
         logging.info('更新 access_token。')
-    
+
     global update_token
     update_token = Timer(24 * 3600, check_accesstoken, (cfg, args))
     update_token.start()
