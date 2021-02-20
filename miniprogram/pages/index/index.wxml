@@ -1,0 +1,26 @@
+<!--index.wxml-->
+<view class="container">
+  <button wx:if="{{!hasUserInfo && canIUse}}" open-type="getUserInfo" bindgetuserinfo="getUserInfo"> 获取头像昵称 </button>
+  <view wx:else>
+    <text class="title"> 大 门 </text>
+    <view class="container2">
+      <button class="button2" bindtap="sendCommand" data-param="0">开门</button>
+      <button class="button2" bindtap="sendCommand" data-param="1">关门</button>
+      <button class="button2" bindtap="sendCommand" data-param="2">暂停</button>
+    </view>
+
+    <text class="title"> 车库门2 </text>
+    <view class="container2">
+      <button class="button2" bindtap="sendCommand" data-param="4">开门</button>
+      <button class="button2" bindtap="sendCommand" data-param="5">关门</button>
+      <button class="button2" bindtap="sendCommand" data-param="6">暂停</button>
+    </view>
+
+    <view>
+      <text class="title">当前模式：{{mode}}</text>
+      <button style="margin-top: 20rpx" bindtap="changeMode"> 切换为{{nextMode}} </button>
+    </view>
+  </view>
+</view>
+
+
