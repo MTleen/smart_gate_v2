@@ -1,6 +1,10 @@
 sys:
   mode: 1
   gate_server_url: "http://127.0.0.1:1880/gate"
+  manual_command_url: "http://127.0.0.1:1880/command"
+  white_list:
+    - 'Mathripper'
+    - '小果'
   metrics:
     coordinate:
       x: 0
@@ -8,14 +12,14 @@ sys:
     close: 
       start: 
         '0': 600
-        '2': 900
-      end: 1100
+        '2': 800
+      end: 950
     open:
-      width: 480
-      start: 1000
+      width: 190
+      start: 950
       end: 
         '0': 900
-        '2': 1000
+        '2': 900
   baidu:
     access_token:
       base_url: "https://aip.baidubce.com/oauth/2.0/token"

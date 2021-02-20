@@ -148,7 +148,11 @@ class VideoTracker(object):
                     self.update_curobjects(identities, bbox_xyxy, cls)
                     logging.info(self.cur_objects)
 
+                    ori_im = draw_boxes(ori_im, bbox_xyxy, identities)
+
                     command, res = self.get_command(ori_im)
+                    if res:
+                        logging.info(res)
                     # 执行指令
                     if command:
                         self.reset_states()
@@ -165,8 +169,6 @@ class VideoTracker(object):
 
                         time.sleep(20)
 
-                    ori_im = draw_boxes(ori_im, bbox_xyxy, identities)
-
                     if self.args.save_path:
                         results.append(
                             (bbox_tlwh, identities,
@@ -174,7 +176,6 @@ class VideoTracker(object):
 
                     #time.sleep(0.5)
                 save_img(ori_im)
-                end = time.time()
 
                 if self.args.display:
                     cv2.imshow("test", ori_im)
@@ -185,19 +186,16 @@ class VideoTracker(object):
 
                     # save results
                     write_results(self.save_results_path, results, 'mot')
-                # logging
-                # logging.info("frame: {}, time: {:.03f}s, fps: {:.03f}, detection numbers: {}, tracking numbers: {}" \
-                #                 .format(idx_frame, end - start, 1 / (end - start), bbox_xywh.shape[0], len(outputs)))
             else:
                 # 视野里没有对象，清空对象字典
                 self.reset_states()
 
                 if self.args.save_path:
                     self.writer.write(ori_im)
-                end = time.time()
-                if end - start < 0.2:
-                    time.sleep(0.2 - (end - start))
                 print('当前画面没有对象。')
+            end = time.time()
+            if end - start < 0.2:
+                time.sleep(0.2 - (end - start))
 
     def update_curobjects(self, identities, bbox_xyxy, cls):
         for i, xyxy, c in zip(identities, bbox_xyxy, cls):
@@ -264,7 +262,7 @@ class VideoTracker(object):
                 init = v['init']
                 current = v['current']
                 # 判断是否开门
-                if current['dis'] < self.cfg.sys.metrics.open.end[c] or (self.xyxy2width(current['coord']) > self.cfg.sys.metrics.open.width and c == '0'):
+                if (init['dis'] < current['dis'] and current['dis'] < self.cfg.sys.metrics.open.end[c]) or (self.xyxy2width(current['coord']) > self.cfg.sys.metrics.open.width and c == '0'):
                     access_token = self.cfg['sys']['baidu']['access_token'][
                         'token']
                     if v['class'] == 0 and face:
@@ -281,6 +279,7 @@ class VideoTracker(object):
                                                  headers=headers)
                         result = response.json()
                         print(result)
+                        res = result
                         if result['error_code'] == 0 and len(
                                 result['result']['user_list']) > 0:
                             print(
@@ -289,7 +288,6 @@ class VideoTracker(object):
                             if any(user['score'] > 75
                                    for user in result['result']['user_list']):
                                 command = 1
-                                res = result
                         face = False
                     elif v['class'] == 2 and car:
                         # 车牌识别
@@ -305,17 +303,17 @@ class VideoTracker(object):
                                                  headers=headers)
                         result = response.json()
                         print(result)
+                        res = result
                         if 'error_code' not in result.keys() and (
                                 result['words_result']['number']
                                 in self.cfg['licenses']):
                             command = 1
-                            res = result
                         car = False
         return command, res
 
     def send_command(self, command, number):
         if self.cfg.sys.mode == 1:
-            url = cfg.sys.gate_server_url
+            url = self.cfg.sys.gate_server_url
             params = {'operation': command, 'number': number}
             res = requests.get(url, params=params, timeout=5)
             return res.json()
@@ -347,12 +345,10 @@ def parse_args():
     parser.add_argument("--config_license",
                         type=str,
                         default="./configs/license.yaml")
-    # parser.add_argument("--ignore_display", dest="display", action="store_false", default=True)
     parser.add_argument("--display", action="store_true")
     parser.add_argument("--frame_interval", type=int, default=1)
     parser.add_argument("--display_width", type=int, default=1920)
     parser.add_argument("--display_height", type=int, default=1080)
-    # parser.add_argument("--save_path", type=str, default="./output/")
     parser.add_argument("--save_path", type=str, default="")
     parser.add_argument("--use_cuda",
                         dest="use_cuda",

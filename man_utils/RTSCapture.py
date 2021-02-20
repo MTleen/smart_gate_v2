@@ -4,7 +4,7 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-08 14:56:30
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-02-08 14:59:05
+LastEditTime: 2021-02-20 03:46:05
 FilePath: /smart_gate_v2/man_utils/RTSCapture.py
 '''
 import cv2
@@ -52,7 +52,7 @@ class RTSCapture(cv2.VideoCapture):
             ok, frame = self.read()
             if not ok: break
             self._cur_frame = frame
-        self._reading = False
+        # self._reading = False
 
     def read2(self):
         """读取最新视频帧

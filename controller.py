@@ -4,7 +4,7 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-07 23:12:03
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-02-10 14:15:39
+LastEditTime: 2021-02-20 17:20:11
 FilePath: /smart_gate_v2/controller.py
 '''
 from flask import Flask
@@ -14,81 +14,71 @@ import requests
 import yaml
 import json
 import argparse
-from threading import Timer
+from threading import Timer, Thread
 import logging
 from easydict import EasyDict as edict
 
-from man_utils.parser import merge_from_file
+from man_utils.parser import get_config
 from man_utils.log import get_logger
-from detect import VideoTracker, check_accesstoken
+from detect import VideoTracker, check_accesstoken, heartbeat, parse_args
 
 app = Flask(__name__)
 
 @app.route('/set_mode')
 def set_mode():
-    cfg.sys.mode = request.args.get('mode', 1)
+    mode = request.args.get('mode')
+    cfg.sys.mode = int(mode)
+    logging.info(f'设置模式：{mode}')
+    return 'ok'
 
+@app.route('/get_whitelist')
+def get_white_list():
+    return json.dumps(cfg.sys.white_list, ensure_ascii=False)
 
+@app.route('/get_mode')
+def get_mode():
+    return {'1': '自动模式', '0': '手动模式'}[str(cfg.sys.mode)]
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--video_path", type=str)
-    parser.add_argument("--config_detection",
-                        type=str,
-                        default="./configs/yolov3.yaml")
-    parser.add_argument("--config_classes",
-                        type=str,
-                        default="./configs/classes.yaml")
-    parser.add_argument("--config_deepsort",
-                        type=str,
-                        default="./configs/deep_sort.yaml")
-    parser.add_argument("--config_sys",
-                        type=str,
-                        default="./configs/sys_conf.yaml")
-    parser.add_argument("--config_license",
-                        type=str,
-                        default="./configs/license.yaml")
-    # parser.add_argument("--ignore_display", dest="display", action="store_false", default=True)
-    parser.add_argument("--display", action="store_true")
-    parser.add_argument("--frame_interval", type=int, default=1)
-    parser.add_argument("--display_width", type=int, default=1920)
-    parser.add_argument("--display_height", type=int, default=1080)
-    # parser.add_argument("--save_path", type=str, default="./output/")
-    parser.add_argument("--save_path", type=str, default="")
-    parser.add_argument("--use_cuda",
-                        dest="use_cuda",
-                        action="store_false",
-                        default=True)
-    parser.add_argument(
-        "--camera",
-        action="store",
-        dest="cam",
-        # type=int,
-        default=-1)
-    return parser.parse_args()
+@app.route('/send_command')
+def send_command():
+    command = request.args.get('operation')
+    url = cfg.sys.manual_command_url
+    print(command)
+    res = requests.get(url, params={'operation': command})
+    if res.status_code == 200:
+        return 'ok'
+    else:
+        return 'error'
+    # return 'ok'
+
+# @app.route('/test')
+# def test():
+#     print(1)
+#     return 'test'
 
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    # 启动服务器
+    Thread(target=app.run,
+           kwargs=({
+               'host': '0.0.0.0',
+               'ssl_context': ('./server/server.pem'
+                               ,'./server/server.key')
+           })).start()
 
-    # app.run()
     args = parse_args()
-    cfg = edict()
-    # cfg.merge_from_file(args.config_detection)
-    merge_from_file(
-        cfg, args.config_deepsort, args.config_classes, args.config_sys, args.config_license)
-    # merge_from_file(cfg, args.config_classes)
-    # cfg.merge_from_file(args.config_sys)
-    # cfg.merge_from_file(args.config_license)
-
-    with open('./configs/test.yaml', 'w') as f:
-        yaml.dump(cfg['sys'], f)
+    cfg = get_config()
+    cfg.merge_from_file(args.config_deepsort)
+    cfg.merge_from_file(args.config_classes)
+    cfg.merge_from_file(args.config_sys)
+    cfg.merge_from_file(args.config_license)
 
     logger = get_logger()
 
     check_accesstoken(cfg, args)
-    update_token = Timer(24 * 3600, check_accesstoken, (cfg, args))
-    update_token.start()
+    heartbeat()
+
     try:
         with VideoTracker(cfg, args, args.video_path) as vdo_trk:
             vdo_trk.run()
