@@ -129,6 +129,9 @@ class VideoTracker(object):
                 bbox_xywh = detector_result.xywh[0][:, :4].cpu()
                 cls_conf = detector_result.pred[0][:, 4].cpu()
                 cls = detector_result.pred[0][:, -1].cpu()
+
+                # 清除 outputs 缓存
+                outputs = None
                 outputs = self.deepsort.update(bbox_xywh, cls_conf, im)
                 # draw boxes for visualization
                 if len(outputs) > 0:
@@ -136,7 +139,7 @@ class VideoTracker(object):
                     bbox_xyxy = outputs[:, :4]
                     identities = outputs[:, -1]
 
-                    if 2 in cls and sum(cls == 2)==1:
+                    if 2 in cls and sum(cls == 2)==1 and len(identities) == len(cls):
                         identities[cls.tolist().index(2)] = '9999'
 
                     if self.video_path:
@@ -325,6 +328,7 @@ class VideoTracker(object):
             self.cur_objects = {}
         if self.is_close == True:
             self.is_close = False
+        
 
 
 def parse_args():
