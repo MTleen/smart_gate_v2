@@ -4,10 +4,10 @@ build/
 *.egg-info
 output/
 videos/
-logs/
-temp/
+logs/*.*
+temp/*
 webserver/
-server/
+server/*
 
 test.ipynb
 yolov5_deepsort.py
