@@ -265,7 +265,7 @@ class VideoTracker(object):
                 init = v['init']
                 current = v['current']
                 # 判断是否开门
-                if (init['dis'] < current['dis'] and current['dis'] < self.cfg.sys.metrics.open.end[c]) or (self.xyxy2width(current['coord']) > self.cfg.sys.metrics.open.width and c == '0'):
+                if (init['dis'] > current['dis'] and current['dis'] < self.cfg.sys.metrics.open.end[c]) or (self.xyxy2width(current['coord']) > self.cfg.sys.metrics.open.width and c == '0'):
                     access_token = self.cfg['sys']['baidu']['access_token'][
                         'token']
                     if v['class'] == 0 and face:
@@ -281,7 +281,6 @@ class VideoTracker(object):
                                                  data=params,
                                                  headers=headers)
                         result = response.json()
-                        print(result)
                         res = result
                         if result['error_code'] == 0 and len(
                                 result['result']['user_list']) > 0:
@@ -305,7 +304,6 @@ class VideoTracker(object):
                                                  data=params,
                                                  headers=headers)
                         result = response.json()
-                        print(result)
                         res = result
                         if 'error_code' not in result.keys() and (
                                 result['words_result']['number']
