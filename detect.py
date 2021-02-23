@@ -378,6 +378,7 @@ def check_accesstoken(cfg, args):
 
     global update_token
     update_token = Timer(24 * 3600, check_accesstoken, (cfg, args))
+    update_token.setDaemon(True)
     update_token.start()
 
 
@@ -385,6 +386,7 @@ def heartbeat():
     logging.info('*************** heart beat ***************')
     global hbt
     hbt = Timer(3600, heartbeat)
+    hbt.setDaemon(True)
     hbt.start()
 
 

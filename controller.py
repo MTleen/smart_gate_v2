@@ -4,7 +4,7 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-07 23:12:03
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-02-23 16:43:41
+LastEditTime: 2021-02-23 17:20:23
 FilePath: /smart_gate_v2/controller.py
 '''
 from flask import Flask
@@ -57,21 +57,16 @@ def send_command():
 #     return 'test'
 
 def start_server():
-    global server 
     app.run(host='0.0.0.0',
             ssl_context=('./server/server.pem', './server/server.key'))
+    start_server()
     
 
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     # 启动服务器
-    Thread(target=app.run,
-           kwargs=({
-               'host': '0.0.0.0',
-               'ssl_context': ('./server/server.pem'
-                               ,'./server/server.key')
-           })).start()
+    Thread(target=start_server).start()
 
     args = parse_args()
     cfg = get_config()
