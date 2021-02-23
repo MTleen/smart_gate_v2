@@ -54,7 +54,7 @@ class VideoTracker(object):
                                        'yolov5s',
                                        pretrained=True,
                                        force_reload=False)
-        self.detector.conf = 0.7
+        self.detector.conf = 0.6
         classes = list(self.cfg.classes.keys())[:-2]
         self.detector.classes = list(map(lambda x: int(x), classes))
         if use_cuda:
@@ -139,8 +139,8 @@ class VideoTracker(object):
                     bbox_xyxy = outputs[:, :4]
                     identities = outputs[:, -1]
 
-                    if 2 in cls and sum(cls == 2)==1 and len(identities) == len(cls):
-                        identities[cls.tolist().index(2)] = '9999'
+                    # if 2 in cls and sum(cls == 2)==1 and len(identities) == len(cls):
+                    #     identities[cls.tolist().index(2)] = '9999'
 
                     if self.video_path:
                         bbox_xyxy = bbox_xyxy * 1920 / self.im_width

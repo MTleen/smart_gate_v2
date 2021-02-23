@@ -4,7 +4,7 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-07 23:12:03
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-02-20 17:20:11
+LastEditTime: 2021-02-23 16:43:41
 FilePath: /smart_gate_v2/controller.py
 '''
 from flask import Flask
@@ -55,6 +55,12 @@ def send_command():
 # def test():
 #     print(1)
 #     return 'test'
+
+def start_server():
+    global server 
+    app.run(host='0.0.0.0',
+            ssl_context=('./server/server.pem', './server/server.key'))
+    
 
 
 if __name__ == '__main__':
