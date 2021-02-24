@@ -4,7 +4,7 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-07 23:12:03
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-02-23 17:20:23
+LastEditTime: 2021-02-24 22:10:34
 FilePath: /smart_gate_v2/controller.py
 '''
 from flask import Flask
@@ -78,7 +78,10 @@ if __name__ == '__main__':
     logger = get_logger()
 
     check_accesstoken(cfg, args)
-    heartbeat()
+    
+    hbt = Thread(target=heartbeat)
+    hbt.setDaemon(True)
+    hbt.start()
 
     try:
         with VideoTracker(cfg, args, args.video_path) as vdo_trk:

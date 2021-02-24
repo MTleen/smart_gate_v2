@@ -9,7 +9,7 @@ import warnings
 import numpy as np
 import base64
 import requests
-from threading import Timer
+from threading import Timer, Thread
 import yaml
 import math
 
@@ -103,12 +103,8 @@ class VideoTracker(object):
         logging.info(
             '############################# 开始检测 #############################')
         results = []
-        # idx_frame = 0
         while self.vdo.isStarted():
         # while self.vdo.grab():
-            # idx_frame += 1
-            # if idx_frame % self.args.frame_interval:
-            #     continue
             start = time.time()
             if self.args.cam != -1:
                 ref, ori_im = self.vdo.read_latest_frame()
@@ -168,7 +164,6 @@ class VideoTracker(object):
                         logging.info(
                             f'触发条件：{res}，\n执行指令：{self.int2command[command]}，\n执行结果：{exec_res}'
                         )
-                        # logging.info(f'执行指令：{self.int2command[command]}')
 
                         time.sleep(20)
 
@@ -196,11 +191,16 @@ class VideoTracker(object):
                 if self.args.save_path:
                     self.writer.write(ori_im)
                 print('当前画面没有对象。')
+                
             end = time.time()
             if end - start < 0.2:
                 time.sleep(0.2 - (end - start))
 
     def update_curobjects(self, identities, bbox_xyxy, cls):
+        for i in list(
+            set(self.cur_objects.keys()).difference(set(map(lambda x: str(x), identities)))):
+            del self.cur_objects[i]
+
         for i, xyxy, c in zip(identities, bbox_xyxy, cls):
             dis = self.xyxy2dis(xyxy)
             if not str(i) in self.cur_objects.keys():
@@ -215,16 +215,16 @@ class VideoTracker(object):
                         'dis': dis
                     }
                 }
-                if dis < self.cfg.sys.metrics.close.start[str(int(c.tolist()))]:
-                    self.is_close = True
             else:
                 self.cur_objects[str(i)]['current'] = {
                     'coord': xyxy,
                     'dis': dis
                 }
-        for i in list(
-                set(self.cur_objects.keys()).difference(set(map(lambda x: str(x), identities)))):
-            del self.cur_objects[i]
+        if any(x['init']['dis'] < self.cfg.sys.metrics.close.start[str(x['class'])] for x in self.cur_objects.values()):
+            self.is_close = True
+        else:
+            self.is_close = False
+
 
     def xyxy2dis(self, xyxy):
         return math.sqrt(
@@ -326,7 +326,7 @@ class VideoTracker(object):
             self.cur_objects = {}
         if self.is_close == True:
             self.is_close = False
-        
+
 
 
 def parse_args():
@@ -383,11 +383,9 @@ def check_accesstoken(cfg, args):
 
 
 def heartbeat():
-    logging.info('*************** heart beat ***************')
-    global hbt
-    hbt = Timer(3600, heartbeat)
-    hbt.setDaemon(True)
-    hbt.start()
+    while 1:
+        logging.info('*************** heart beat ***************')
+        time.sleep(3600)
 
 
 if __name__ == "__main__":
@@ -403,7 +401,9 @@ if __name__ == "__main__":
     logger = get_logger()
 
     check_accesstoken(cfg, args)
-    heartbeat()
+    hbt = Thread(target=heartbeat)
+    hbt.setDaemon(True)
+    hbt.start()
 
     try:
         with VideoTracker(cfg, args, args.video_path) as vdo_trk:
