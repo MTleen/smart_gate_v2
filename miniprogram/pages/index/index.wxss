@@ -4,9 +4,10 @@
   flex-direction: row;
   justify-content: space-around;
   flex-wrap: wrap;
-  padding: 20rpx 0;
-  height: 250rpx;
+  /* padding: 20rpx 0; */
+  /* height: 250rpx; */
   align-content: space-around;
+  margin-bottom: 100rpx;
 }
 
 .title{
@@ -18,12 +19,11 @@
   display: block;
 }
 
-.button2{
-  /* width: 25%; */
-  /* padding: 20 10 */
+view{
+  align-items: center;
+  justify-items: center;
+  text-align: center;
 }
-
-
 
 .userinfo {
   display: flex;
