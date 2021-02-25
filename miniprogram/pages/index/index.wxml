@@ -1,26 +1,32 @@
 <!--index.wxml-->
-<view class="container">
+<!-- <view class='container'> -->
   <button wx:if="{{!hasUserInfo && canIUse}}" open-type="getUserInfo" bindgetuserinfo="getUserInfo"> 获取头像昵称 </button>
   <view wx:else>
-    <text class="title"> 大 门 </text>
+    <van-divider contentPosition='center' fontSize='18'>大 门</van-divider>
     <view class="container2">
-      <button class="button2" bindtap="sendCommand" data-param="0">开门</button>
+      <!-- <button class="button2" bindtap="sendCommand" data-param="0">开门</button>
       <button class="button2" bindtap="sendCommand" data-param="1">关门</button>
-      <button class="button2" bindtap="sendCommand" data-param="2">暂停</button>
+      <button class="button2" bindtap="sendCommand" data-param="2">暂停</button> -->
+      <van-button type='primary' plain hairline bind:click="sendCommand" data-param="0">开 门</van-button>
+      <van-button type='primary' plain hairline bind:click="sendCommand" data-param="1">关 门</van-button>
+      <van-button type='primary' plain hairline bind:click="sendCommand" data-param="2">暂 停</van-button>
     </view>
 
-    <text class="title"> 车库门2 </text>
+    <van-divider contentPosition='center' fontSize='18'>车库门 2</van-divider>
     <view class="container2">
-      <button class="button2" bindtap="sendCommand" data-param="4">开门</button>
+      <!-- <button class="button2" bindtap="sendCommand" data-param="4">开门</button>
       <button class="button2" bindtap="sendCommand" data-param="5">关门</button>
-      <button class="button2" bindtap="sendCommand" data-param="6">暂停</button>
+      <button class="button2" bindtap="sendCommand" data-param="6">暂停</button> -->
+      <van-button type='info' plain hairline bind:click="sendCommand" data-param="4">开 门</van-button>
+      <van-button type='info' plain hairline bind:click="sendCommand" data-param="5">关 门</van-button>
+      <van-button type='info' plain hairline bind:click="sendCommand" data-param="6">暂 停</van-button>
     </view>
 
     <view>
-      <text class="title">当前模式：{{mode}}</text>
-      <button style="margin-top: 20rpx" bindtap="changeMode"> 切换为{{nextMode}} </button>
+      <van-divider contentPosition='center' fontSize='15'>当前模式：{{mode}}</van-divider>
+      <!-- <button style="margin-top: 20rpx" bindtap="changeMode"> 切换为{{nextMode}} </button> -->
+      <van-button round type='info' bind:click="changeMode">切换为 {{nextMode}}</van-button>
     </view>
   </view>
-</view>
-
+<!-- </view> -->
 
