@@ -401,8 +401,7 @@ if __name__ == "__main__":
     logger = get_logger()
 
     check_accesstoken(cfg, args)
-    hbt = Thread(target=heartbeat)
-    hbt.setDaemon(True)
+    hbt = Thread(target=heartbeat, daemon=True)
     hbt.start()
 
     try:
