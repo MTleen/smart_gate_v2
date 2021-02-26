@@ -2,6 +2,25 @@
 .container {
 	margin-top: 30%;
 }
+.container2{
+	display: -webkit-box;
+	display: -webkit-flex;
+	display: flex;
+	-webkit-box-orient: horizontal;
+	-webkit-box-direction: normal;
+	-webkit-flex-direction: row;
+	        flex-direction: row;
+	-webkit-justify-content: space-around;
+	        justify-content: space-around;
+	-webkit-flex-wrap: wrap;
+	        flex-wrap: wrap;
+	/* padding: 20rpx 0; */
+	/* height: 250rpx; */
+	-webkit-align-content: space-around;
+	        align-content: space-around;
+	margin-bottom: 100rpx;
+	margin-top: 30rpx;
+}
 .content {
 	display: -webkit-box;
 	display: -webkit-flex;

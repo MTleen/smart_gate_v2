@@ -8,6 +8,8 @@ logs/*.*
 temp/*
 webserver/
 server/*
+miniprogram_uni/unpackage
+
 
 test.ipynb
 yolov5_deepsort.py
