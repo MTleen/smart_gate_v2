@@ -1,0 +1,1 @@
+<view class="content"><view class="container"><u-button vue-id="8dd740cc-1" type="info" ripple="{{true}}" bind:__l="__l" vue-slots="{{['default']}}">授 权 登 陆</u-button></view></view>
