@@ -1,1 +1,1 @@
-<view class="content"><view class="container"><u-button vue-id="8dd740cc-1" type="info" ripple="{{true}}" bind:__l="__l" vue-slots="{{['default']}}">授 权 登 陆</u-button></view></view>
+<view class="content"><block wx:if="{{canIUse&&!hasUserInfo}}"><view class="container"><u-button vue-id="8dd740cc-1" type="info" ripple="{{true}}" open-type="getUserInfo" data-event-opts="{{[['^getuserinfo',[['getUserInfo']]]]}}" bind:getuserinfo="__e" bind:__l="__l" vue-slots="{{['default']}}">授 权 登 陆</u-button></view></block></view>

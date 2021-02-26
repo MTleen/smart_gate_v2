@@ -176,8 +176,29 @@ var _default =
 
 
   },
-  onLoad: function onLoad() {
+  onLoad: function onLoad() {var _this = this;
+    if (globalData.userInfo) {
+      this.userInfo = uni.globalData.userInfo;
+      this.hasUserInfo = true;
+    } else if (this.canIUse) {
+      // 由于 getUserInfo 是网络请求，可能会在 Page.onLoad 之后才返回
+      // 所以此处加入 callback 以防止这种情况
+      uni.userInfoReadyCallback = function (res) {
+        _this.userInfo = res.userInfo;
+        _this.hasUserInfo = true;
+      };
+    } else {
+      // 在没有 open-type=getUserInfo 版本的兼容处理
+      console.log(1);
+      uni.getUserInfo({
+        success: function success(res) {
+          console.log(res);
+          uni.globalData.userInfo = res.userInfo;
+          _this.userInfo = res.userInfo;
+          _this.hasUserInfo = true;
+        } });
 
+    }
   },
   methods: {} };exports.default = _default;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
