@@ -1,10 +1,10 @@
 {
-  "description": "Project configuration file",
+  "description": "项目配置文件。",
   "packOptions": {
     "ignore": []
   },
   "setting": {
-    "urlCheck": true,
+    "urlCheck": false,
     "es6": true,
     "enhance": false,
     "postcss": true,
@@ -40,18 +40,9 @@
     "minifyWXSS": true
   },
   "compileType": "miniprogram",
-  "libVersion": "2.15.0",
+  "libVersion": "",
   "appid": "wxc827af7be4e7b392",
-  "projectname": "smart_gate",
-  "debugOptions": {
-    "hidedInDevtools": []
-  },
-  "scripts": {},
-  "staticServerOptions": {
-    "baseURL": "",
-    "servePath": ""
-  },
-  "isGameTourist": false,
+  "projectname": "miniprogram_uni",
   "condition": {
     "search": {
       "list": []
@@ -60,12 +51,6 @@
       "list": []
     },
     "game": {
-      "list": []
-    },
-    "plugin": {
-      "list": []
-    },
-    "gamePlugin": {
       "list": []
     },
     "miniprogram": {

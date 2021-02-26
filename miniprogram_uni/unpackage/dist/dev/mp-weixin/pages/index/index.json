@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "小胡果家",
+  "usingComponents": {
+    "u-toast": "/node-modules/uview-ui/components/u-toast/u-toast",
+    "u-button": "/node-modules/uview-ui/components/u-button/u-button",
+    "u-divider": "/node-modules/uview-ui/components/u-divider/u-divider",
+    "u-cell-group": "/node-modules/uview-ui/components/u-cell-group/u-cell-group",
+    "u-cell-item": "/node-modules/uview-ui/components/u-cell-item/u-cell-item",
+    "u-switch": "/node-modules/uview-ui/components/u-switch/u-switch"
+  }
+}
