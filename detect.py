@@ -284,10 +284,7 @@ class VideoTracker(object):
                         res = result
                         if result['error_code'] == 0 and len(
                                 result['result']['user_list']) > 0:
-                            print(
-                                any(user['score'] > 75
-                                    for user in result['result']['user_list']))
-                            if any(user['score'] > 75
+                            if any(user['score'] > 70
                                    for user in result['result']['user_list']):
                                 command = 1
                         face = False
