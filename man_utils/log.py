@@ -1,3 +1,12 @@
+'''
+Description: 
+Author: Shengxiang Hu
+Github: https://github.com/MTleen
+Date: 2021-02-01 00:41:22
+LastEditors: Shengxiang Hu
+LastEditTime: 2021-02-27 18:06:41
+FilePath: /smart_gate_v2/man_utils/log.py
+'''
 import logging
 import logging.config
 import json
@@ -17,17 +26,5 @@ def get_logger(name='root', cfg_path='./configs/logger_config.json'):
         print('logger 配置文件有误，返回基础 logger！')
         logging.basicConfig(level=logging.DEBUG)
         return logging.getLogger('root')
-
-    # formatter = logging.Formatter(
-    #     # fmt='%(asctime)s [%(levelname)s]: %(filename)s(%(funcName)s:%(lineno)s) >> %(message)s')
-    #     fmt='%(asctime)s [%(levelname)s]: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-
-    # handler = logging.StreamHandler()
-    # handler.setFormatter(formatter)
-
-    # logger = logging.getLogger(name)
-    # logger.setLevel(logging.INFO)
-    # logger.addHandler(handler)
-    # return logger
 
 

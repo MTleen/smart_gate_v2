@@ -18,7 +18,7 @@ sys:
       width: 190
       start: 950
       end: 
-        '0': 900
+        '0': 920
         '2': 950
   baidu:
     access_token:
@@ -39,3 +39,6 @@ sys:
       base_url: "https://aip.baidubce.com/rest/2.0/ocr/v1/license_plate"
       params:
         image: ""
+  pic_host:
+    base_url: "https://sm.ms/api/v2/upload"
+    Authorization: "Vaf0v7idZ2zAla28firW0ySHbYvg1J6m"
