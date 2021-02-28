@@ -35,6 +35,7 @@ class VideoTracker(object):
         # self.logger = get_logger("root")
         self.is_close = False
         self.int2command = {1: "open", 2: "close"}
+        self.start = time.time()
 
         use_cuda = args.use_cuda and torch.cuda.is_available()
         if not use_cuda:
@@ -107,17 +108,21 @@ class VideoTracker(object):
             '############################# 开始检测 #############################')
         results = []
         while self.vdo.isStarted():
-        # while self.vdo.grab():
-            start = time.time()
+            # while self.vdo.grab():
+
             if self.args.cam != -1:
                 ref, ori_im = self.vdo.read_latest_frame()
             else:
                 ref, ori_im = self.vdo.retrieve()
             if not ref:
                 logging.info('获取不到画面！')
+                end = time.time()
+                if end - self.start > self.cfg.sys.restart_interval:
+                    raise Exception('获取画面超时！')
                 time.sleep(1)
                 continue
-
+            self.start = time.time()
+            
             im = cv2.cvtColor(ori_im, cv2.COLOR_BGR2RGB)
 
             # do detection
@@ -203,8 +208,8 @@ class VideoTracker(object):
                 print('当前画面没有对象。')
 
             end = time.time()
-            if end - start < 0.2:
-                time.sleep(0.2 - (end - start))
+            if end - self.start < 0.2:
+                time.sleep(0.2 - (end - self.start))
 
     def upload_img(self, file_path):
         url = self.cfg.sys.pic_host.base_url
