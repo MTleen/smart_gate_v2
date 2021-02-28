@@ -11,7 +11,7 @@ server/*
 miniprogram_uni/unpackage
 
 
-test.ipynb
+*.ipynb
 yolov5_deepsort.py
 
 
