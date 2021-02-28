@@ -1,15 +1,39 @@
+'''
+Description: 
+Author: Shengxiang Hu
+Github: https://github.com/MTleen
+Date: 2021-02-01 00:41:22
+LastEditors: Shengxiang Hu
+LastEditTime: 2021-02-28 00:46:58
+FilePath: /smart_gate_v2/man_utils/io.py
+'''
 import os
 from typing import Dict
 import numpy as np
 import time
 import cv2
+import json
 
 # from utils.log import get_logger
-def save_img(img):
+def save_img(img, command=None):
     now = time.localtime()
     output_dir = os.path.join('./temp', f'{now.tm_year}-{now.tm_mon}-{now.tm_mday}')
     os.makedirs(output_dir, exist_ok=True)
-    cv2.imwrite(os.path.join(output_dir, time.strftime('%H:%M:%S', now) + '.jpg'), img) 
+    prefix = f'{command} ' if command else ''
+    file_path = os.path.join(output_dir, prefix + time.strftime('%H:%M:%S', now) + '.jpg')
+    cv2.imwrite(file_path, img)
+    return file_path
+
+
+def save_history(redis, command, url):
+    now = time.localtime()
+    date = time.strftime('%Y-%m-%d', now)
+    date_time = time.strftime('%Y-%m-%d %H:%M:%S', now)
+    history = json.dumps({'command': str(command), 'url': url, 'date': date_time}, ensure_ascii=False)
+    try:
+        redis.rpush(date, history)
+    except Exception:
+        return
 
 
 def write_results(filename, results, data_type):
@@ -40,24 +64,6 @@ def read_results(filename, data_type: str, is_gt=False, is_ignore=False):
         raise ValueError('Unknown data type: {}'.format(data_type))
 
     return read_fun(filename, is_gt, is_ignore)
-
-
-"""
-labels={'ped', ...			% 1
-'person_on_vhcl', ...	% 2
-'car', ...				% 3
-'bicycle', ...			% 4
-'mbike', ...			% 5
-'non_mot_vhcl', ...		% 6
-'static_person', ...	% 7
-'distractor', ...		% 8
-'occluder', ...			% 9
-'occluder_on_grnd', ...		%10
-'occluder_full', ...		% 11
-'reflection', ...		% 12
-'crowd' ...			% 13
-};
-"""
 
 
 def read_mot_results(filename, is_gt, is_ignore):

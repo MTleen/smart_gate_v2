@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/detect.py",
             "console": "integratedTerminal",
             "python": "/home/mathripper/anaconda3/envs/torch/bin/python",
-            "args": ["--video_path", "./videos/car_out.mp4"]
+            "args": ["--video_path", "./videos/car_in.mp4"]
             // "args": ["--camera", "rtsp://admin:HikLZDADB@192.168.1.27:554/h265/ch1/main"]
         }
     ]

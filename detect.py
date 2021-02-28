@@ -4,6 +4,7 @@ import traceback
 import cv2
 import time
 import argparse
+from numpy.lib.type_check import _imag_dispatcher
 import torch
 import warnings
 import numpy as np
@@ -12,22 +13,24 @@ import requests
 from threading import Timer, Thread
 import yaml
 import math
+from redis import StrictRedis
 
 from deep_sort import build_tracker
 from man_utils.draw import draw_boxes
 from man_utils.parser import get_config
 from man_utils.log import get_logger
-from man_utils.io import write_results, save_img
+from man_utils.io import write_results, save_img, save_history
 from man_utils.RTSCapture import RTSCapture
 
 from matplotlib import pyplot as plt
 
 
 class VideoTracker(object):
-    def __init__(self, cfg, args, video_path=None):
+    def __init__(self, cfg, args, video_path=None, redis=None):
         self.cfg = cfg
         self.args = args
         self.video_path = video_path
+        self.redis = redis
         self.cur_objects = {}
         # self.logger = get_logger("root")
         self.is_close = False
@@ -152,9 +155,18 @@ class VideoTracker(object):
                     command, res = self.get_command(ori_im)
                     if res:
                         logging.info(res)
+                    # 保存图片
+                    img_path = save_img(ori_im, command)
+
                     # 执行指令
                     if command:
                         self.reset_states()
+
+                        url = self.upload_img(img_path)
+                        if self.redis:
+                            save_history(
+                                self.redis, command, url
+                            )
 
                         exec_res = self.send_command(
                             self.int2command[command],
@@ -173,8 +185,6 @@ class VideoTracker(object):
                              [self.cfg.classes[str(int(c))] for c in cls]))
 
                     #time.sleep(0.5)
-                save_img(ori_im)
-
                 if self.args.display:
                     cv2.imshow("test", ori_im)
                     cv2.waitKey(1)
@@ -191,10 +201,21 @@ class VideoTracker(object):
                 if self.args.save_path:
                     self.writer.write(ori_im)
                 print('当前画面没有对象。')
-                
+
             end = time.time()
             if end - start < 0.2:
                 time.sleep(0.2 - (end - start))
+
+    def upload_img(self, file_path):
+        url = self.cfg.sys.pic_host.base_url
+        headers = {'Authorization': self.cfg.sys.pic_host.Authorization}
+        files = {'smfile': open(file_path, 'rb').read()}
+        res = requests.post(url, headers=headers, files=files).json()
+        if res['success']:
+            return res['data']['url']
+        else:
+            return None
+
 
     def update_curobjects(self, identities, bbox_xyxy, cls):
         for i in list(
@@ -284,10 +305,7 @@ class VideoTracker(object):
                         res = result
                         if result['error_code'] == 0 and len(
                                 result['result']['user_list']) > 0:
-                            print(
-                                any(user['score'] > 75
-                                    for user in result['result']['user_list']))
-                            if any(user['score'] > 75
+                            if any(user['score'] > 70
                                    for user in result['result']['user_list']):
                                 command = 1
                         face = False
@@ -401,14 +419,17 @@ if __name__ == "__main__":
     logger = get_logger()
 
     check_accesstoken(cfg, args)
-    hbt = Thread(target=heartbeat)
-    hbt.setDaemon(True)
+    hbt = Thread(target=heartbeat, daemon=True)
     hbt.start()
-
     try:
-        with VideoTracker(cfg, args, args.video_path) as vdo_trk:
+        redis = StrictRedis('127.0.0.1', port=6379, db=1)
+    except Exception:
+        logging.error('redis 数据库连接错误！')
+        redis = None
+    try:
+        with VideoTracker(cfg, args, args.video_path, redis=redis) as vdo_trk:
             vdo_trk.run()
     except Exception as e:
         logging.exception('检测出错')
-        with VideoTracker(cfg, args, args.video_path) as vdo_trk:
+        with VideoTracker(cfg, args, args.video_path, redis=redis) as vdo_trk:
             vdo_trk.run()

@@ -4,12 +4,13 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-07 23:12:03
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-02-24 22:10:34
+LastEditTime: 2021-02-27 23:52:38
 FilePath: /smart_gate_v2/controller.py
 '''
 from flask import Flask
 from flask import request
 import os
+from numpy.lib.histograms import histogram
 import requests
 import yaml
 import json
@@ -17,6 +18,8 @@ import argparse
 from threading import Timer, Thread
 import logging
 from easydict import EasyDict as edict
+import time
+from redis import StrictRedis
 
 from man_utils.parser import get_config
 from man_utils.log import get_logger
@@ -49,18 +52,29 @@ def send_command():
         return 'ok'
     else:
         return 'error'
-    # return 'ok'
 
-# @app.route('/test')
-# def test():
-#     print(1)
-#     return 'test'
+@app.route('/get_history')
+def get_history():
+    date = time.strftime('%Y-%m-%d', time.localtime())
+    if redis:
+        try:
+            raw_history = redis.lrange(date, 0, -1)
+            history = list(map(lambda x: x.decode(), raw_history))
+            return json.dumps(history, ensure_ascii=False)
+        except Exception:
+            logging.error('redis 操作出错！')
+            return 'error'
+    else:
+        return 'error'
 
 def start_server():
-    app.run(host='0.0.0.0',
-            ssl_context=('./server/server.pem', './server/server.key'))
-    start_server()
-    
+    try:
+        app.run(host='0.0.0.0',
+                ssl_context=('./server/server.pem', './server/server.key'))
+    except Exception:
+        logging.error('服务器报错，重启服务器！')
+        start_server()
+
 
 
 if __name__ == '__main__':
@@ -78,15 +92,21 @@ if __name__ == '__main__':
     logger = get_logger()
 
     check_accesstoken(cfg, args)
-    
+
     hbt = Thread(target=heartbeat)
     hbt.setDaemon(True)
     hbt.start()
 
     try:
-        with VideoTracker(cfg, args, args.video_path) as vdo_trk:
+        redis = StrictRedis('127.0.0.1', port=6379, db=1)
+    except Exception:
+        logging.error('redis 数据库连接错误！')
+        redis = None
+
+    try:
+        with VideoTracker(cfg, args, args.video_path, redis=redis) as vdo_trk:
             vdo_trk.run()
     except Exception as e:
         logging.exception('检测出错')
-        with VideoTracker(cfg, args, args.video_path) as vdo_trk:
+        with VideoTracker(cfg, args, args.video_path, redis=redis) as vdo_trk:
             vdo_trk.run()
