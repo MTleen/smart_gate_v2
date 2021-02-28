@@ -22,6 +22,14 @@
 					<u-switch slot="right-icon" v-model="checked" :loading='loading' @change='change'></u-switch>
 				</u-cell-item>
 			</u-cell-group>
+			
+			<u-cell-group>
+				<u-cell-item>
+					<navigator url="../timeline/timeline" hover-class="other-navigator-hover">
+						查看当日自动开关门记录
+					</navigator>
+				</u-cell-item>
+			</u-cell-group>
 		</view>
 	</view>
 </template>
@@ -71,7 +79,7 @@
 			  success: function(res){
 			    if(res.statusCode == 200){
 					that.mode = res.data
-					that.checked = res.data == '手动模式'? false:true
+					that.checked = res.data == '手动模式'? false : true
 			    }
 			  }
 			})
