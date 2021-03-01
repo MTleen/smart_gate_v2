@@ -4,7 +4,7 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-07 23:12:03
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-02-27 23:52:38
+LastEditTime: 2021-03-01 23:46:38
 FilePath: /smart_gate_v2/controller.py
 '''
 from flask import Flask
@@ -23,7 +23,7 @@ from redis import StrictRedis
 
 from man_utils.parser import get_config
 from man_utils.log import get_logger
-from detect import VideoTracker, check_accesstoken, heartbeat, parse_args
+from detect import check_accesstoken, heartbeat, parse_args, start_detect
 
 app = Flask(__name__)
 
@@ -76,7 +76,6 @@ def start_server():
         start_server()
 
 
-
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     # 启动服务器
@@ -103,10 +102,4 @@ if __name__ == '__main__':
         logging.error('redis 数据库连接错误！')
         redis = None
 
-    try:
-        with VideoTracker(cfg, args, args.video_path, redis=redis) as vdo_trk:
-            vdo_trk.run()
-    except Exception as e:
-        logging.exception('检测出错')
-        with VideoTracker(cfg, args, args.video_path, redis=redis) as vdo_trk:
-            vdo_trk.run()
+    start_detect(cfg, args, redis)

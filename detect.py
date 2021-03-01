@@ -122,7 +122,7 @@ class VideoTracker(object):
                 time.sleep(1)
                 continue
             self.start = time.time()
-            
+
             im = cv2.cvtColor(ori_im, cv2.COLOR_BGR2RGB)
 
             # do detection
@@ -411,6 +411,15 @@ def heartbeat():
         time.sleep(3600)
 
 
+def start_detect(cfg, args, redis=None):
+    try:
+        with VideoTracker(cfg, args, args.video_path, redis=redis) as vdo_trk:
+            vdo_trk.run()
+    except Exception as e:
+        logging.exception('检测出错')
+        start_detect(cfg, args, redis)
+
+
 if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     args = parse_args()
@@ -431,10 +440,5 @@ if __name__ == "__main__":
     except Exception:
         logging.error('redis 数据库连接错误！')
         redis = None
-    try:
-        with VideoTracker(cfg, args, args.video_path, redis=redis) as vdo_trk:
-            vdo_trk.run()
-    except Exception as e:
-        logging.exception('检测出错')
-        with VideoTracker(cfg, args, args.video_path, redis=redis) as vdo_trk:
-            vdo_trk.run()
+    
+    start_detect(cfg, args, redis)
