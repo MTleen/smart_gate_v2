@@ -9,7 +9,16 @@
 				"navigationBarTitleText": "小胡果家"
 			}
 		}
-	],
+	    ,{
+            "path" : "pages/timeline/timeline",
+            "style" :                                                                                    
+            {
+                "navigationBarTitleText": "开关门记录",
+                "enablePullDownRefresh": true
+            }
+            
+        }
+    ],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "小胡果家",
