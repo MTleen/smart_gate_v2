@@ -413,8 +413,9 @@ def heartbeat():
 
 def start_detect(cfg, args, redis=None):
     try:
-        with VideoTracker(cfg, args, args.video_path, redis=redis) as vdo_trk:
-            vdo_trk.run()
+        while 1:
+            with VideoTracker(cfg, args, args.video_path, redis=redis) as vdo_trk:
+                vdo_trk.run()
     except Exception as e:
         logging.exception('检测出错')
         start_detect(cfg, args, redis)
@@ -433,7 +434,7 @@ if __name__ == "__main__":
     logger = get_logger()
 
     check_accesstoken(cfg, args)
-    hbt = Thread(target=heartbeat, daemon=True)
+    hbt = Thread(target=heartbeat, daemon=True, name='heart_beat')
     hbt.start()
     try:
         redis = StrictRedis('127.0.0.1', port=6379, db=1)

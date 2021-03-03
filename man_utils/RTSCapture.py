@@ -4,7 +4,7 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-08 14:56:30
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-03-01 23:42:57
+LastEditTime: 2021-03-02 18:56:21
 FilePath: /smart_gate_v2/man_utils/RTSCapture.py
 '''
 import cv2
@@ -29,7 +29,7 @@ class RTSCapture(cv2.VideoCapture):
         """
         rtscap = RTSCapture(url)
         rtscap.frame_receiver = threading.Thread(target=rtscap.recv_frame,
-                                                 daemon=True)
+                                                 daemon=True, name='video_capture')
         rtscap.schemes.extend(schemes)
         if isinstance(url, str) and url.startswith(tuple(rtscap.schemes)):
             rtscap._reading = True

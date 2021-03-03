@@ -4,7 +4,7 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-07 23:12:03
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-03-01 23:46:38
+LastEditTime: 2021-03-02 18:54:43
 FilePath: /smart_gate_v2/controller.py
 '''
 from flask import Flask
@@ -69,8 +69,9 @@ def get_history():
 
 def start_server():
     try:
-        app.run(host='0.0.0.0',
-                ssl_context=('./server/server.pem', './server/server.key'))
+        while 1:
+            app.run(host='0.0.0.0',
+                    ssl_context=('./server/server.pem', './server/server.key'))
     except Exception:
         logging.error('服务器报错，重启服务器！')
         start_server()
@@ -79,7 +80,7 @@ def start_server():
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     # 启动服务器
-    Thread(target=start_server).start()
+    Thread(target=start_server, name='flask_server').start()
 
     args = parse_args()
     cfg = get_config()
