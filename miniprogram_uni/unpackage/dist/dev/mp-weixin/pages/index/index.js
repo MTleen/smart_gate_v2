@@ -96,22 +96,22 @@ var components
 try {
   components = {
     uToast: function() {
-      return __webpack_require__.e(/*! import() | node-modules/uview-ui/components/u-toast/u-toast */ "node-modules/uview-ui/components/u-toast/u-toast").then(__webpack_require__.bind(null, /*! uview-ui/components/u-toast/u-toast.vue */ 48))
+      return __webpack_require__.e(/*! import() | node-modules/uview-ui/components/u-toast/u-toast */ "node-modules/uview-ui/components/u-toast/u-toast").then(__webpack_require__.bind(null, /*! uview-ui/components/u-toast/u-toast.vue */ 56))
     },
     uButton: function() {
-      return __webpack_require__.e(/*! import() | node-modules/uview-ui/components/u-button/u-button */ "node-modules/uview-ui/components/u-button/u-button").then(__webpack_require__.bind(null, /*! uview-ui/components/u-button/u-button.vue */ 55))
+      return __webpack_require__.e(/*! import() | node-modules/uview-ui/components/u-button/u-button */ "node-modules/uview-ui/components/u-button/u-button").then(__webpack_require__.bind(null, /*! uview-ui/components/u-button/u-button.vue */ 63))
     },
     uDivider: function() {
-      return __webpack_require__.e(/*! import() | node-modules/uview-ui/components/u-divider/u-divider */ "node-modules/uview-ui/components/u-divider/u-divider").then(__webpack_require__.bind(null, /*! uview-ui/components/u-divider/u-divider.vue */ 62))
+      return __webpack_require__.e(/*! import() | node-modules/uview-ui/components/u-divider/u-divider */ "node-modules/uview-ui/components/u-divider/u-divider").then(__webpack_require__.bind(null, /*! uview-ui/components/u-divider/u-divider.vue */ 70))
     },
     uCellGroup: function() {
-      return __webpack_require__.e(/*! import() | node-modules/uview-ui/components/u-cell-group/u-cell-group */ "node-modules/uview-ui/components/u-cell-group/u-cell-group").then(__webpack_require__.bind(null, /*! uview-ui/components/u-cell-group/u-cell-group.vue */ 69))
+      return __webpack_require__.e(/*! import() | node-modules/uview-ui/components/u-cell-group/u-cell-group */ "node-modules/uview-ui/components/u-cell-group/u-cell-group").then(__webpack_require__.bind(null, /*! uview-ui/components/u-cell-group/u-cell-group.vue */ 77))
     },
     uCellItem: function() {
-      return __webpack_require__.e(/*! import() | node-modules/uview-ui/components/u-cell-item/u-cell-item */ "node-modules/uview-ui/components/u-cell-item/u-cell-item").then(__webpack_require__.bind(null, /*! uview-ui/components/u-cell-item/u-cell-item.vue */ 76))
+      return __webpack_require__.e(/*! import() | node-modules/uview-ui/components/u-cell-item/u-cell-item */ "node-modules/uview-ui/components/u-cell-item/u-cell-item").then(__webpack_require__.bind(null, /*! uview-ui/components/u-cell-item/u-cell-item.vue */ 84))
     },
     uSwitch: function() {
-      return __webpack_require__.e(/*! import() | node-modules/uview-ui/components/u-switch/u-switch */ "node-modules/uview-ui/components/u-switch/u-switch").then(__webpack_require__.bind(null, /*! uview-ui/components/u-switch/u-switch.vue */ 83))
+      return __webpack_require__.e(/*! import() | node-modules/uview-ui/components/u-switch/u-switch */ "node-modules/uview-ui/components/u-switch/u-switch").then(__webpack_require__.bind(null, /*! uview-ui/components/u-switch/u-switch.vue */ 91))
     }
   }
 } catch (e) {
@@ -276,6 +276,7 @@ var _default =
         data: {
           operation: command },
 
+        timeout: 2000,
         success: function success(res) {
           if (res.statusCode == 200) {
             _this2.$refs.uToast.show({
@@ -287,7 +288,7 @@ var _default =
           }
         },
         fail: function fail(res) {
-          show_alert();
+          _this2.show_alert();
         } });
 
     },
@@ -302,43 +303,25 @@ var _default =
     change: function change(status) {
       var that = this;
       this.loading = true;
-      if (status) {
-        uni.request({
-          url: 'https://rss.fourieripper.icu:5000/set_mode',
-          data: {
-            mode: '1' },
+      uni.request({
+        url: 'https://rss.fourieripper.icu:5000/set_mode',
+        data: {
+          mode: status ? '1' : '0' },
 
-          success: function success(res) {
-            console.log(res);
-            if (res.statusCode == 200) {
-              that.mode = '自动模式';
-              that.loading = false;
-            }
-          },
-          fail: function fail() {
+        timeout: 1000,
+        success: function success(res) {
+          console.log(res);
+          if (res.statusCode == 200) {
+            that.mode = status ? '自动模式' : '手动模式';
             that.loading = false;
-            show_alert();
-          } });
+          }
+        },
+        fail: function fail() {
+          that.loading = false;
+          that.checked = !status;
+          that.show_alert();
+        } });
 
-      } else {
-        uni.request({
-          url: 'https://rss.fourieripper.icu:5000/set_mode',
-          data: {
-            mode: '0' },
-
-          success: function success(res) {
-            console.log(res);
-            if (res.statusCode == 200) {
-              that.mode = '手动模式';
-              that.loading = false;
-            }
-          },
-          fail: function fail() {
-            that.loading = false;
-            show_alert();
-          } });
-
-      }
     } } };exports.default = _default;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
 

@@ -44,7 +44,7 @@
 				checked: false,
 				loading: false,			
 				mode: "手动模式",
-				whiteList: []
+				whiteList: [],
 			}
 		},
 		onLoad() {
@@ -106,6 +106,7 @@
 					data: {
 						operation: command
 					},
+					timeout: 2000,
 					success: res => {
 						if(res.statusCode == 200){
 							this.$refs.uToast.show({
@@ -117,7 +118,7 @@
 						}
 					},
 					fail: (res) => {
-						show_alert()
+						this.show_alert()
 					}
 				})
 			},
@@ -132,43 +133,25 @@
 			change(status){
 				var that = this
 				this.loading = true
-				if(status){
-					uni.request({
-						url: 'https://rss.fourieripper.icu:5000/set_mode',
-						data: {
-						  mode: '1'
-						},
-						success: res => {
-						  console.log(res)
-						  if(res.statusCode == 200){
-						    that.mode = '自动模式'
-						    that.loading = false
-						  }
-						},
-						fail: () => {
-							that.loading = false
-							show_alert()
-						}
-					})
-				}else{
-					uni.request({
-						url: 'https://rss.fourieripper.icu:5000/set_mode',
-						data: {
-						  mode: '0'
-						},
-						success: res => {
-						  console.log(res)
-						  if(res.statusCode == 200){
-						    that.mode = '手动模式'
-						    that.loading = false
-						  }
-						},
-						fail: () => {
-							that.loading = false
-							show_alert()
-						}
-					})
-				}
+				uni.request({
+					url: 'https://rss.fourieripper.icu:5000/set_mode',
+					data: {
+					  mode: status ? '1' : '0'
+					},
+					timeout: 1000,
+					success: res => {
+					  console.log(res)
+					  if(res.statusCode == 200){
+						that.mode = status ? '自动模式' : '手动模式'
+						that.loading = false
+					  }
+					},
+					fail: () => {
+						that.loading = false
+						that.checked = !status
+						that.show_alert()
+					}
+				})
 			}
 		}
 	}
