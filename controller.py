@@ -4,7 +4,7 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-07 23:12:03
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-03-02 18:54:43
+LastEditTime: 2021-03-08 00:43:09
 FilePath: /smart_gate_v2/controller.py
 '''
 from flask import Flask
@@ -26,26 +26,40 @@ from man_utils.log import get_logger
 from detect import check_accesstoken, heartbeat, parse_args, start_detect
 
 app = Flask(__name__)
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+logger = get_logger()
+
+try:
+    redis = StrictRedis('127.0.0.1', port=6379, db=1)
+except Exception:
+    logging.error('redis 数据库连接错误！')
 
 @app.route('/set_mode')
 def set_mode():
     mode = request.args.get('mode')
-    cfg.sys.mode = int(mode)
+    # cfg.sys.mode = int(mode)
+    redis.set('mode', mode)
     logging.info(f'设置模式：{mode}')
     return 'ok'
 
 @app.route('/get_whitelist')
 def get_white_list():
-    return json.dumps(cfg.sys.white_list, ensure_ascii=False)
+    logging.info('获取白名单')
+    return json.dumps(list(
+        map(lambda x: x.decode(), redis.lrange('white_list', 0, -1))),
+                      ensure_ascii=False)
+
 
 @app.route('/get_mode')
 def get_mode():
-    return {'1': '自动模式', '0': '手动模式'}[str(cfg.sys.mode)]
+    logging.info('get_mode')
+    return {'1': '自动模式', '0': '手动模式'}[redis.get('mode').decode()]
 
 @app.route('/send_command')
 def send_command():
     command = request.args.get('operation')
-    url = cfg.sys.manual_command_url
+    logging.info(f'send command: {command}')
+    url = redis.get('manual_command_url').decode()
     print(command)
     res = requests.get(url, params={'operation': command})
     if res.status_code == 200:
@@ -55,6 +69,7 @@ def send_command():
 
 @app.route('/get_history')
 def get_history():
+    logging.info('get history')
     date = time.strftime('%Y-%m-%d', time.localtime())
     if redis:
         try:
@@ -99,8 +114,6 @@ if __name__ == '__main__':
 
     try:
         redis = StrictRedis('127.0.0.1', port=6379, db=1)
+        start_detect(cfg, args, redis)
     except Exception:
         logging.error('redis 数据库连接错误！')
-        redis = None
-
-    start_detect(cfg, args, redis)
