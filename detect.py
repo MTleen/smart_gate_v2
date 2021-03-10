@@ -108,7 +108,7 @@ class VideoTracker(object):
             '############################# 开始检测 #############################')
         results = []
         while self.vdo.isStarted():
-            # while self.vdo.grab():
+        # while self.vdo.grab():
 
             if self.args.cam != -1:
                 ref, ori_im = self.vdo.read_latest_frame()
@@ -336,7 +336,7 @@ class VideoTracker(object):
         return command, res
 
     def send_command(self, command, number):
-        if self.cfg.sys.mode == 1:
+        if self.redis.get('mode').decode() == '1':
             url = self.cfg.sys.gate_server_url
             params = {'operation': command, 'number': number}
             res = requests.get(url, params=params, timeout=5)
@@ -438,8 +438,6 @@ if __name__ == "__main__":
     hbt.start()
     try:
         redis = StrictRedis('127.0.0.1', port=6379, db=1)
+        start_detect(cfg, args, redis)
     except Exception:
         logging.error('redis 数据库连接错误！')
-        redis = None
-    
-    start_detect(cfg, args, redis)
