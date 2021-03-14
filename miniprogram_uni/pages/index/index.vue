@@ -47,19 +47,20 @@
 				whiteList: [],
 			}
 		},
-		onLoad() {
+		onReady() {
 			var app = getApp()
 			console.log(app.globalData)
 			if (app.globalData.userInfo) {
 				this.userInfo = app.globalData.userInfo
 				this.hasUserInfo = true
-			} else if (this.canIUse) {
-				// 由于 getUserInfo 是网络请求，可能会在 Page.onLoad 之后才返回
-				// 所以此处加入 callback 以防止这种情况
-				uni.userInfoReadyCallback = res => {
-					this.userInfo = res.userInfo
-					this.hasUserInfo = true
-			  }
+			// } else if (this.canIUse) {
+			// 	// 由于 getUserInfo 是网络请求，可能会在 Page.onLoad 之后才返回
+			// 	// 所以此处加入 callback 以防止这种情况
+				
+			// 	uni.userInfoReadyCallback = res => {
+			// 		this.userInfo = res.userInfo
+			// 		this.hasUserInfo = true
+			//   }
 			} else {
 			  // 在没有 open-type=getUserInfo 版本的兼容处理
 				uni.getUserInfo({
