@@ -1,7 +1,7 @@
 sys:
   gate_server_url: "http://127.0.0.1:1880/gate"
   manual_command_url: "http://127.0.0.1:1880/command"
-  restart_interval: 3600
+  restart_interval: 600
   white_list:
     - 'Mathripper'
     - '小果'

@@ -48,7 +48,8 @@ class VideoTracker(object):
 
         if args.cam != -1:
             print("Using webcam " + str(args.cam))
-            self.vdo = RTSCapture.create(args.cam)
+            self.vdo = RTSCapture.create(args.cam,
+                                         self.cfg.sys.restart_interval)
             self.vdo.start_read()
         else:
             self.vdo = cv2.VideoCapture()
@@ -116,9 +117,9 @@ class VideoTracker(object):
                 ref, ori_im = self.vdo.retrieve()
             if not ref:
                 logging.info('获取不到画面！')
-                end = time.time()
-                if end - self.start > self.cfg.sys.restart_interval:
-                    raise Exception('获取画面超时！')
+                # end = time.time()
+                # if end - self.start > self.cfg.sys.restart_interval:
+                #     raise Exception('获取画面超时！')
                 time.sleep(1)
                 continue
             self.start = time.time()
@@ -412,13 +413,12 @@ def heartbeat():
 
 
 def start_detect(cfg, args, redis=None):
-    try:
-        while 1:
+    while 1:
+        try:
             with VideoTracker(cfg, args, args.video_path, redis=redis) as vdo_trk:
                 vdo_trk.run()
-    except Exception as e:
-        logging.exception('检测出错')
-        start_detect(cfg, args, redis)
+        except Exception as e:
+            logging.exception('检测出错，服务重启！')
 
 
 if __name__ == "__main__":

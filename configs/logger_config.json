@@ -37,6 +37,11 @@
             "level":"DEBUG",
             "handlers":[],
             "propagate":"no"
+        },
+        "gunicorn": {
+            "level": "DEBUG",
+            "handlers": ["info_file_handler", "error_file_handler"],
+            "propagate": "no"
         }
     },
     "root":{

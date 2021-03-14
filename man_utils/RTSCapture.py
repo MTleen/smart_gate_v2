@@ -4,11 +4,12 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-08 14:56:30
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-03-02 18:56:21
+LastEditTime: 2021-03-14 22:34:46
 FilePath: /smart_gate_v2/man_utils/RTSCapture.py
 '''
 import cv2
 import threading
+import time
 
 
 class RTSCapture(cv2.VideoCapture):
@@ -18,16 +19,18 @@ class RTSCapture(cv2.VideoCapture):
 
     _cur_frame = None
     _reading = False
+    _interval_time = 600
     schemes = ["rtsp://", "rtmp://"]  #用于识别实时流
 
     @staticmethod
-    def create(url, *schemes):
+    def create(url, interval_time, *schemes):
         """实例化&初始化
         rtscap = RTSCapture.create("rtsp://example.com/live/1")
         or
         rtscap = RTSCapture.create("http://example.com/live/1.m3u8", "http://")
         """
         rtscap = RTSCapture(url)
+        rtscap._interval_time = interval_time
         rtscap.frame_receiver = threading.Thread(target=rtscap.recv_frame,
                                                  daemon=True, name='video_capture')
         rtscap.schemes.extend(schemes)
@@ -51,9 +54,13 @@ class RTSCapture(cv2.VideoCapture):
         while self._reading and self.isOpened():
             ok, frame = self.read()
             if not ok: 
-                self._cur_frame = None 
+                self._cur_frame = None
+                end = time.time()
+                if end - start > self._interval_time:
+                    raise Exception('获取画面超时！')
             else:
                 self._cur_frame = frame
+                start = time.time()
         # self._reading = False
 
     def read2(self):

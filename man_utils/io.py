@@ -4,7 +4,7 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-01 00:41:22
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-02-28 00:46:58
+LastEditTime: 2021-03-14 21:55:49
 FilePath: /smart_gate_v2/man_utils/io.py
 '''
 import os
@@ -17,7 +17,7 @@ import json
 # from utils.log import get_logger
 def save_img(img, command=None):
     now = time.localtime()
-    output_dir = os.path.join('./temp', f'{now.tm_year}-{now.tm_mon}-{now.tm_mday}')
+    output_dir = os.path.join('./temp', '{}-{:0>2d}-{:0>2d}'.format(now.tm_year, now.tm_mon, now.tm_mday))
     os.makedirs(output_dir, exist_ok=True)
     prefix = f'{command} ' if command else ''
     file_path = os.path.join(output_dir, prefix + time.strftime('%H:%M:%S', now) + '.jpg')
