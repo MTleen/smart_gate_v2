@@ -42,3 +42,8 @@ sys:
   pic_host:
     base_url: "https://sm.ms/api/v2/upload"
     Authorization: "Vaf0v7idZ2zAla28firW0ySHbYvg1J6m"
+  qiniu:
+    access_key: "f-UfNkFWkzhps5UXndnLHU55s4x6tyo8ZdcVskBf"
+    secret_key: "7yGq6pfe0eTpLnboSc5zADTkS0zK1iq7gal0cOem"
+    bucket_name: "smart-gate"
+    base_url: "http://imghost.shusnjl.cn"

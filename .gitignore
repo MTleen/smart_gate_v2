@@ -21,3 +21,4 @@ miniprogram_uni/unpackage
 *.ipynb
 yolov5_deepsort.py
 test.ipynb
+.*

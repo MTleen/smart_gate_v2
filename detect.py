@@ -14,6 +14,8 @@ from threading import Timer, Thread
 import yaml
 import math
 from redis import StrictRedis
+from qiniu import Auth, put_file, etag
+import qiniu.config
 
 from deep_sort import build_tracker
 from man_utils.draw import draw_boxes
@@ -36,6 +38,8 @@ class VideoTracker(object):
         self.is_close = False
         self.int2command = {1: "open", 2: "close"}
         self.start = time.time()
+        # 七牛云图床上传权限申请
+        self.q = Auth(self.cfg.sys.qiniu.access_key, self.cfg.sys.qiniu.secret_key)
 
         use_cuda = args.use_cuda and torch.cuda.is_available()
         if not use_cuda:
@@ -213,14 +217,15 @@ class VideoTracker(object):
                 time.sleep(0.2 - (end - self.start))
 
     def upload_img(self, file_path):
-        url = self.cfg.sys.pic_host.base_url
-        headers = {'Authorization': self.cfg.sys.pic_host.Authorization}
-        files = {'smfile': open(file_path, 'rb').read()}
-        res = requests.post(url, headers=headers, files=files).json()
-        if res['success']:
-            return res['data']['url']
-        else:
-            return None
+        bucket_name = self.cfg.sys.qiniu.bucket_name
+        #上传后保存的文件名
+        key = os.path.split(file_path)[-1]
+        #生成上传 Token，可以指定过期时间等
+        token = self.q.upload_token(bucket_name, key, 3600)
+        #要上传文件的本地路径
+        ret, info = put_file(token, key, file_path)
+        assert ret['key'] == key
+        return self.cfg.sys.qiniu.base_url + '/' + key
 
 
     def update_curobjects(self, identities, bbox_xyxy, cls):
