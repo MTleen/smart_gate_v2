@@ -113,7 +113,7 @@ class VideoTracker(object):
             '############################# 开始检测 #############################')
         results = []
         while self.vdo.isStarted():
-        # while self.vdo.grab():
+            # while self.vdo.grab():
 
             if self.args.cam != -1:
                 ref, ori_im = self.vdo.read_latest_frame()
@@ -121,13 +121,14 @@ class VideoTracker(object):
                 ref, ori_im = self.vdo.retrieve()
             if not ref:
                 logging.info('获取不到画面！')
+                self.redis.set('detect_status', 0)
                 # end = time.time()
                 # if end - self.start > self.cfg.sys.restart_interval:
                 #     raise Exception('获取画面超时！')
                 time.sleep(1)
                 continue
             self.start = time.time()
-
+            self.redis.set('detect_status', 1)
             im = cv2.cvtColor(ori_im, cv2.COLOR_BGR2RGB)
 
             # do detection
@@ -220,12 +221,16 @@ class VideoTracker(object):
         bucket_name = self.cfg.sys.qiniu.bucket_name
         #上传后保存的文件名
         key = os.path.split(file_path)[-1]
-        #生成上传 Token，可以指定过期时间等
-        token = self.q.upload_token(bucket_name, key, 3600)
-        #要上传文件的本地路径
-        ret, info = put_file(token, key, file_path)
-        assert ret['key'] == key
-        return self.cfg.sys.qiniu.base_url + '/' + key
+        try:
+            #生成上传 Token，可以指定过期时间等
+            token = self.q.upload_token(bucket_name, key, 3600)
+            #要上传文件的本地路径
+            ret, info = put_file(token, key, file_path)
+            assert ret['key'] == key
+            return self.cfg.sys.qiniu.base_url + '/' + key
+        except Exception:
+            logging.exception('七牛云上传图片出错！')
+            return None
 
 
     def update_curobjects(self, identities, bbox_xyxy, cls):
@@ -424,6 +429,8 @@ def start_detect(cfg, args, redis=None):
                 vdo_trk.run()
         except Exception as e:
             logging.exception('检测出错，服务重启！')
+            redis.set('detect_status', 0)
+    redis.set('detect_status', 0)
 
 
 if __name__ == "__main__":

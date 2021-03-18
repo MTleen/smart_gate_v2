@@ -4,7 +4,7 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-08 14:56:30
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-03-14 22:34:46
+LastEditTime: 2021-03-18 16:34:27
 FilePath: /smart_gate_v2/man_utils/RTSCapture.py
 '''
 import cv2
@@ -53,7 +53,7 @@ class RTSCapture(cv2.VideoCapture):
         """子线程读取最新视频帧方法"""
         while self._reading and self.isOpened():
             ok, frame = self.read()
-            if not ok: 
+            if not ok:
                 self._cur_frame = None
                 end = time.time()
                 if end - start > self._interval_time:
@@ -61,6 +61,7 @@ class RTSCapture(cv2.VideoCapture):
             else:
                 self._cur_frame = frame
                 start = time.time()
+        raise Exception('视频实时抓取线程中断！')
         # self._reading = False
 
     def read2(self):

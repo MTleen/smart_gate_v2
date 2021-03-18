@@ -4,7 +4,7 @@ Author: Shengxiang Hu
 Github: https://github.com/MTleen
 Date: 2021-02-07 23:12:03
 LastEditors: Shengxiang Hu
-LastEditTime: 2021-03-14 22:59:58
+LastEditTime: 2021-03-18 19:48:39
 FilePath: /smart_gate_v2/controller.py
 '''
 from flask import Flask
@@ -42,6 +42,10 @@ def set_mode():
     redis.set('mode', mode)
     logger.info(f'***************** set mode：{mode} *****************')
     return 'ok'
+
+@app.route('/get_detect_states')
+def get_states():
+    return redis.get('detect_status').decode()
 
 @app.route('/get_whitelist')
 def get_white_list():
