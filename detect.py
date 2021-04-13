@@ -113,7 +113,7 @@ class VideoTracker(object):
             '############################# 开始检测 #############################')
         results = []
         while self.vdo.isStarted():
-            # while self.vdo.grab():
+        # while self.vdo.grab():
 
             if self.args.cam != -1:
                 ref, ori_im = self.vdo.read_latest_frame()
