@@ -34,6 +34,7 @@ class VideoTracker(object):
         self.video_path = video_path
         self.redis = redis
         self.cur_objects = {}
+        self.reset_interval = 0
         # self.logger = get_logger("root")
         self.is_close = False
         self.int2command = {1: "open", 2: "close"}
@@ -122,9 +123,6 @@ class VideoTracker(object):
             if not ref:
                 logging.info('获取不到画面！')
                 self.redis.set('detect_status', 0)
-                # end = time.time()
-                # if end - self.start > self.cfg.sys.restart_interval:
-                #     raise Exception('获取画面超时！')
                 time.sleep(1)
                 continue
             self.start = time.time()
@@ -135,6 +133,7 @@ class VideoTracker(object):
             detector_result = self.detector(im)
             if len(detector_result.pred) > 0 and len(
                     detector_result.pred[0] > 0):
+                self.reset_interval = 0
 
                 bbox_xywh = detector_result.xywh[0][:, :4].cpu()
                 cls_conf = detector_result.pred[0][:, 4].cpu()
@@ -206,8 +205,12 @@ class VideoTracker(object):
                     # save results
                     write_results(self.save_results_path, results, 'mot')
             else:
-                # 视野里没有对象，清空对象字典
-                self.reset_states()
+                # 视野里没有对象，空屏计数器 reset_interval += 1
+                # 超过一定帧数视野无对象，即排除目标检测器遗漏
+                if self.reset_interval > self.cfg.sys.reset_interval:
+                    self.reset_states()
+                else:
+                    self.reset_interval += 1
 
                 if self.args.save_path:
                     self.writer.write(ori_im)
@@ -360,6 +363,7 @@ class VideoTracker(object):
             self.cur_objects = {}
         if self.is_close == True:
             self.is_close = False
+        self.reset_interval = 0
 
 
 
@@ -430,6 +434,7 @@ def start_detect(cfg, args, redis=None):
         except Exception as e:
             logging.exception('检测出错，服务重启！')
             redis.set('detect_status', 0)
+    logging.error('检测意外停止！')
     redis.set('detect_status', 0)
 
 
@@ -448,8 +453,10 @@ if __name__ == "__main__":
     check_accesstoken(cfg, args)
     hbt = Thread(target=heartbeat, daemon=True, name='heart_beat')
     hbt.start()
-    try:
-        redis = StrictRedis('127.0.0.1', port=6379, db=1)
-        start_detect(cfg, args, redis)
-    except Exception:
-        logging.error('redis 数据库连接错误！')
+    while 1:
+        try:
+            redis = StrictRedis('127.0.0.1', port=6379, db=1)
+            start_detect(cfg, args, redis)
+        except Exception:
+            logging.error('redis 数据库连接错误！')
+    logging.error('系统意外停止！')
