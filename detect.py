@@ -25,6 +25,15 @@ from man_utils.io import write_results, save_img, save_history
 from man_utils.RTSCapture import RTSCapture
 
 from matplotlib import pyplot as plt
+import json
+from tencentcloud.common import credential
+from tencentcloud.common.profile.client_profile import ClientProfile
+from tencentcloud.common.profile.http_profile import HttpProfile
+from tencentcloud.common.exception.tencent_cloud_sdk_exception import TencentCloudSDKException
+from tencentcloud.iai.v20200303 import iai_client
+from tencentcloud.iai.v20200303 import models as iai_models
+from tencentcloud.ocr.v20181119 import ocr_client
+from tencentcloud.ocr.v20181119 import models as ocr_models
 
 
 class VideoTracker(object):
@@ -114,7 +123,7 @@ class VideoTracker(object):
             '############################# 开始检测 #############################')
         results = []
         while self.vdo.isStarted():
-        # while self.vdo.grab():
+            # while self.vdo.grab():
 
             if self.args.cam != -1:
                 ref, ori_im = self.vdo.read_latest_frame()
@@ -306,46 +315,36 @@ class VideoTracker(object):
                 current = v['current']
                 # 判断是否开门
                 if (init['dis'] > current['dis'] and current['dis'] < self.cfg.sys.metrics.open.end[c]) or (self.xyxy2width(current['coord']) > self.cfg.sys.metrics.open.width and c == '0'):
-                    access_token = self.cfg['sys']['baidu']['access_token'][
-                        'token']
                     if v['class'] == 0 and face:
                         # 人脸识别
-                        request_url = self.cfg['sys']['baidu']['face_search'][
-                            'base_url']
-                        params = self.cfg['sys']['baidu']['face_search'][
-                            'params']
-                        params['image'] = pic_str
-                        request_url = request_url + "?access_token=" + access_token
-                        headers = {'content-type': 'application/json'}
-                        response = requests.post(request_url,
-                                                 data=params,
-                                                 headers=headers)
-                        result = response.json()
-                        res = result
-                        if result['error_code'] == 0 and len(
-                                result['result']['user_list']) > 0:
-                            if any(user['score'] > 70
-                                   for user in result['result']['user_list']):
+                        try:
+                            req = iai_models.SearchPersonsReturnsByGroupRequest()
+                            params = {
+                                "GroupIds": ["home"],
+                                "Image": pic_str,
+                                "FaceMatchThreshold": self.cfg.sys.ai.face_search.face_math_threshold
+                            }
+                            req.from_json_string(json.dumps(params))
+                            resp = self.cfg.sys.ai.face_client.SearchPersonsReturnsByGroup(req).to_json_string()
+                            res = json.loads(resp)
+
+                            if len(res['ResultsReturnsByGroup']) > 0:
                                 command = 1
+                        except TencentCloudSDKException as err:
+                            logging.exception(err)
                         face = False
                     elif v['class'] == 2 and car:
                         # 车牌识别
-                        request_url = self.cfg.sys.baidu.license_plate.base_url + '?access_token=' + access_token
-                        params = self.cfg['sys']['baidu']['license_plate'][
-                            'params']
-                        params['image'] = pic_str
-                        headers = {
-                            'content-type': 'application/x-www-form-urlencoded'
-                        }
-                        response = requests.post(request_url,
-                                                 data=params,
-                                                 headers=headers)
-                        result = response.json()
-                        res = result
-                        if 'error_code' not in result.keys() and (
-                                result['words_result']['number']
-                                in self.cfg['licenses']):
-                            command = 1
+                        try:
+                            req = ocr_models.LicensePlateOCRRequest()
+                            params = {"ImageBase64": pic_str}
+                            req.from_json_string(json.dumps(params))
+                            resp = self.cfg.sys.ai.license_client.LicensePlateOCR(req).to_json_string()
+                            res = json.loads(resp)
+                            if res['Response']['Number'] in self.cfg.licenses:
+                                command = 1
+                        except TencentCloudSDKException as err:
+                            logging.exception(err)
                         car = False
         return command, res
 
@@ -404,20 +403,23 @@ def parse_args():
 
 
 def check_accesstoken(cfg, args):
-    now = time.time()
-    last_update = cfg.sys.baidu.access_token.fresh_time
-    if not last_update or now - last_update > 5 * 24 * 3600:
-        host = cfg['sys']['baidu']['access_token']['base_url']
-        params = cfg['sys']['baidu']['access_token']['params']
-        res = requests.get(host, params=params)
-        token = res.json()['access_token']
-        cfg['sys']['baidu']['access_token']['token'] = token
-        logging.info('更新 access_token。')
+    cred = credential.Credential(cfg.sys.ai.access_token.secret_id, cfg.sys.ai.access_token.secret_key)
 
-    global update_token
-    update_token = Timer(24 * 3600, check_accesstoken, (cfg, args))
-    update_token.setDaemon(True)
-    update_token.start()
+    f_httpProfile = HttpProfile()
+    f_httpProfile.endpoint = cfg.sys.ai.face_search.endpoint
+
+    f_clientProfile = ClientProfile()
+    f_clientProfile.httpProfile = f_httpProfile
+    f_client = iai_client.IaiClient(cred, "ap-shanghai", f_clientProfile)
+    cfg.sys.ai.face_client = f_client
+
+    l_httpProfile = HttpProfile()
+    l_httpProfile.endpoint = cfg.sys.ai.license_plate.endpoint
+
+    l_clientProfile = ClientProfile()
+    l_clientProfile.httpProfile = l_httpProfile
+    l_client = ocr_client.OcrClient(cred, "ap-shanghai", l_clientProfile)
+    cfg.sys.ai.license_client = l_client
 
 
 def heartbeat():
@@ -427,15 +429,15 @@ def heartbeat():
 
 
 def start_detect(cfg, args, redis=None):
-    while 1:
-        try:
-            with VideoTracker(cfg, args, args.video_path, redis=redis) as vdo_trk:
-                vdo_trk.run()
-        except Exception as e:
-            logging.exception('检测出错，服务重启！')
-            redis.set('detect_status', 0)
-    logging.error('检测意外停止！')
-    redis.set('detect_status', 0)
+    # while 1:
+    try:
+        with VideoTracker(cfg, args, args.video_path, redis=redis) as vdo_trk:
+            vdo_trk.run()
+    except Exception as e:
+        logging.exception('检测出错！')
+        redis.set('detect_status', 0)
+    # logging.error('检测意外停止！')
+    # redis.set('detect_status', 0)
 
 
 if __name__ == "__main__":
@@ -453,10 +455,10 @@ if __name__ == "__main__":
     check_accesstoken(cfg, args)
     hbt = Thread(target=heartbeat, daemon=True, name='heart_beat')
     hbt.start()
-    while 1:
-        try:
-            redis = StrictRedis('127.0.0.1', port=6379, db=1)
-            start_detect(cfg, args, redis)
-        except Exception:
-            logging.error('redis 数据库连接错误！')
-    logging.error('系统意外停止！')
+    # while 1:
+    try:
+        redis = StrictRedis('127.0.0.1', port=6379, db=1)
+        start_detect(cfg, args, redis)
+    except Exception:
+        logging.error('redis 数据库连接错误！')
+    # logging.error('系统意外停止！')

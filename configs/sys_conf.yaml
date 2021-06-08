@@ -21,6 +21,15 @@ sys:
       end: 
         '0': 920
         '2': 950
+  ai:
+    access_token:
+      secret_key: "zi9KGvKSIsBDxReaGgphIcgTzEDwPbYE"
+      secret_id: "AKIDymLegRwBD1f28xWpseAQQCj12mFRM0Th"
+    face_search:
+      face_math_threshold: 70,
+      endpoint: "iai.tencentcloudapi.com"
+    license_plate:
+      endpoint: "ocr.tencentcloudapi.com"
   baidu:
     access_token:
       base_url: "https://aip.baidubce.com/oauth/2.0/token"
